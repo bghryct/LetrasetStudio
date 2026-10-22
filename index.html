@@ -46,7 +46,6 @@
         /* Cursors */
         .cursor-lasso { cursor: crosshair !important; }
         .cursor-stamp { cursor: crosshair !important; }
-        .cursor-burnish { cursor: crosshair !important; }
         .cursor-move { cursor: move !important; }
 
         /* Pan & zoom viewports */
@@ -147,12 +146,7 @@
                 <i data-lucide="scissors" class="w-4 h-4"></i>
                 LETRASET STUDIO
             </div>
-            <span class="text-xs text-zinc-400 font-mono hidden md:inline-block">Polygonal Lasso Clean Ink Extractor & Rub-Down Engine</span>
-        </div>
-
-        <div id="stylus-status" class="hidden sm:flex items-center gap-2 bg-zinc-950 px-3 py-1 rounded-full border border-zinc-800 text-[11px] text-zinc-400">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span id="stylus-pressure-txt">Stylus Pressure: 1.00</span>
+            <span class="text-xs text-zinc-400 font-mono hidden md:inline-block">Polygonal Lasso Clean Ink Extractor & Type Layout</span>
         </div>
 
         <!-- Project, Export & Canvas Setup Controls -->
@@ -290,7 +284,7 @@
             </div>
         </section>
 
-        <!-- CENTRE STAGE: Design Canvas (Substrate & Burnish Studio) -->
+        <!-- CENTRE STAGE: Design Canvas -->
         <section class="flex-1 min-w-0 min-h-0 flex flex-col bg-zinc-950 overflow-hidden relative">
 
             <!-- Design Studio Toolbar Header -->
@@ -300,9 +294,6 @@
                     <button data-tool="stamp" class="tool-btn btn-active px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition" title="Stamp (S)">
                         <i data-lucide="stamp" class="w-3.5 h-3.5"></i> Stamp
                     </button>
-                    <button data-tool="burnish" class="tool-btn px-3 py-1.5 text-zinc-400 hover:text-white rounded-md text-xs font-semibold flex items-center gap-1.5 transition" title="Burnish (B)">
-                        <i data-lucide="flame" class="w-3.5 h-3.5"></i> Burnish
-                    </button>
                     <button data-tool="select" class="tool-btn px-3 py-1.5 text-zinc-400 hover:text-white rounded-md text-xs font-semibold flex items-center gap-1.5 transition" title="Select / move (V)">
                         <i data-lucide="mouse-pointer-2" class="w-3.5 h-3.5"></i> Select
                     </button>
@@ -311,6 +302,16 @@
                     </button>
                     <button data-tool="pan" class="tool-btn px-3 py-1.5 text-zinc-400 hover:text-white rounded-md text-xs font-semibold flex items-center gap-1.5 transition" title="Pan (H, or hold Space)">
                         <i data-lucide="hand" class="w-3.5 h-3.5"></i> Pan
+                    </button>
+                </div>
+
+                <!-- History -->
+                <div class="flex items-center bg-zinc-950 p-1 rounded-lg border border-zinc-800 gap-1">
+                    <button id="btn-undo" class="px-2 py-1.5 text-zinc-300 hover:text-white rounded-md disabled:opacity-30 disabled:cursor-default" title="Undo (⌘/Ctrl+Z)" disabled>
+                        <i data-lucide="undo-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <button id="btn-redo" class="px-2 py-1.5 text-zinc-300 hover:text-white rounded-md disabled:opacity-30 disabled:cursor-default" title="Redo (⇧⌘Z / Ctrl+Y)" disabled>
+                        <i data-lucide="redo-2" class="w-3.5 h-3.5"></i>
                     </button>
                 </div>
 
@@ -338,9 +339,6 @@
                     </button>
                     <button id="btn-grid-panel" class="toggle-chip" title="Grid settings">
                         <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
-                    </button>
-                    <button id="btn-reveal-sheet" class="text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition">
-                        <i data-lucide="eye" class="w-3.5 h-3.5"></i> Transfer All
                     </button>
                     <button id="btn-clear-canvas" class="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition">
                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear
@@ -408,12 +406,13 @@
                 <canvas id="design-overlay" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
 
                 <!-- Selected stamp: exact scale / rotation -->
-                <div id="item-inspector" class="absolute top-3 right-3 z-20 bg-zinc-900/95 border border-zinc-700 rounded-lg px-3 py-2 text-[11px] text-zinc-400 flex items-center gap-3 shadow-xl" style="display: none;">
+                <div id="item-inspector" class="absolute top-3 right-3 z-20 bg-zinc-900/95 border border-zinc-700 rounded-lg px-3 py-2 text-[11px] text-zinc-400 flex flex-wrap items-center gap-x-3 gap-y-2 max-w-[calc(100%-1.5rem)] shadow-xl" style="display: none;">
                     <span id="item-name" class="text-zinc-200 font-semibold max-w-[120px] truncate"></span>
                     <label class="flex items-center gap-1">Scale <input id="item-scale" type="number" min="5" max="2000" step="1" class="grid-input w-16"> %</label>
                     <label class="flex items-center gap-1">Rotate <input id="item-rotate" type="number" min="-180" max="180" step="0.5" class="grid-input w-14"> °</label>
                     <label class="flex items-center gap-1" title="Ink colour of this stamp">Ink <input id="item-color" type="color" class="w-6 h-6 rounded border border-zinc-700 bg-transparent cursor-pointer p-0"></label>
                     <label class="flex items-center gap-1" title="How the selected stamps mix with the paper and stamps beneath them">Blend <select id="item-blend" class="grid-input" style="width:112px"></select></label>
+                    <button id="item-duplicate" class="text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-700 p-1 rounded-md" title="Duplicate (⌘/Ctrl+D)"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
                     <button id="item-reset" class="text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-700 px-2 py-1 rounded-md" title="Back to 100% and 0°">Reset</button>
                     <button id="item-delete" class="text-red-300 hover:text-red-200 bg-zinc-800 hover:bg-zinc-700 p-1 rounded-md" title="Delete (Del)"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                 </div>
@@ -600,9 +599,6 @@
         // GPU-backed: nothing reads its pixels back, and every stamp composites onto it
         const designCtx = designCanvas.getContext('2d');
         const designWrapper = document.getElementById('design-wrapper');
-
-        const rubMaskCanvas = document.createElement('canvas');
-        let rubCtx = rubMaskCanvas.getContext('2d');
 
         const paperCanvas = document.createElement('canvas');
         let paperCtx = paperCanvas.getContext('2d', { willReadFrequently: true });
@@ -794,11 +790,10 @@
             state.canvasWidth = w;
             state.canvasHeight = h;
 
-            for (const c of [designCanvas, rubMaskCanvas, paperCanvas]) {
+            for (const c of [designCanvas, paperCanvas]) {
                 c.width = w;
                 c.height = h;
             }
-            rubCtx = rubMaskCanvas.getContext('2d');
             paperCtx = paperCanvas.getContext('2d', { willReadFrequently: true });
             paperKey = '';
 
@@ -806,7 +801,7 @@
             if (prevW && (prevW !== w || prevH !== h)) scaleGridLengths(w / prevW, h / prevH);
 
             designVP.setContentSize(w, h);
-            resetRubMask(true);
+            renderDesignCanvas();
         }
 
         function mulberry32(a) {
@@ -1582,16 +1577,10 @@
         // DESIGN CANVAS & DEGRADATION RENDER ENGINE
         // ------------------------------------------------------------------
 
-        function resetRubMask(fillAll = true) {
-            rubCtx.fillStyle = fillAll ? '#ffffff' : '#000000';
-            rubCtx.fillRect(0, 0, rubMaskCanvas.width, rubMaskCanvas.height);
-            renderDesignCanvas();
-        }
-
         const PAPER_COLORS = { newsprint: '#f3eee3', kraft: '#e4d3b8', linen: '#f8f8f6', charcoal: '#252528' };
 
         // The paper only changes with the preset or the format; rebuilding its per-pixel
-        // noise on every burnish move made large canvases crawl
+        // noise on every drag move made large canvases crawl
         let paperKey = '';
         function generatePaperSubstrate() {
             const w = paperCanvas.width;
@@ -1644,7 +1633,7 @@
                 if (x1 <= x0 || y1 <= y0) continue;
                 const bw = x1 - x0, bh = y1 - y0;
 
-                // stamp → scratch (offset so its box starts at 0,0), trimmed by the rub mask
+                // stamp → scratch (offset so its box starts at 0,0)
                 fitScratch(bw, bh);
                 trCtx.globalCompositeOperation = 'source-over';
                 trCtx.clearRect(0, 0, bw, bh);
@@ -1655,9 +1644,6 @@
                 trCtx.imageSmoothingQuality = 'high';
                 trCtx.drawImage(degCanvas, -degCanvas.width / 2, -degCanvas.height / 2);
                 trCtx.restore();
-                trCtx.globalCompositeOperation = 'destination-in';
-                trCtx.drawImage(rubMaskCanvas, x0, y0, bw, bh, 0, 0, bw, bh);
-                trCtx.globalCompositeOperation = 'source-over';
 
                 designCtx.globalCompositeOperation = itemBlend(item);
                 designCtx.drawImage(transferredCanvas, 0, 0, bw, bh, x0, y0, bw, bh);
@@ -2029,7 +2015,7 @@
             return c;
         }
 
-        // Cached per placed stamp: burnishing and dragging re-render every frame and
+        // Cached per placed stamp: dragging and scaling re-render every frame and
         // must not recompute the wear; it's rebuilt only when the wear sliders change.
         function createDegradedStampCanvas(item) {
             const key = `${state.flaking}|${state.wearNoise}|${item.color || ''}`;
@@ -2806,30 +2792,10 @@
         // DESIGN INTERACTION & TOOLS
         // ------------------------------------------------------------------
         function getDesignPos(e) {
-            const p = designVP.toContent(e);
-            let pressure = 1.0;
-            if (e.pressure !== undefined && e.pressure > 0) pressure = e.pressure;
-            return { x: p.x, y: p.y, pressure: pressure };
+            return designVP.toContent(e);
         }
 
         const onBoard = (pos) => pos.x >= 0 && pos.y >= 0 && pos.x <= state.canvasWidth && pos.y <= state.canvasHeight;
-
-        function applyBurnishStylus(pos) {
-            rubCtx.save();
-            const radius = 20 + pos.pressure * 25;
-            const grad = rubCtx.createRadialGradient(pos.x, pos.y, radius * 0.2, pos.x, pos.y, radius);
-            grad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
-            grad.addColorStop(0.8, 'rgba(255, 255, 255, 0.85)');
-            grad.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
-
-            rubCtx.fillStyle = grad;
-            rubCtx.beginPath();
-            rubCtx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
-            rubCtx.fill();
-            rubCtx.restore();
-
-            renderDesignCanvas();
-        }
 
         const toast = (msg) => { document.getElementById('toast-txt').textContent = msg; };
 
@@ -2853,6 +2819,7 @@
                 }
                 if (!onBoard(pos)) return;
                 const at = snapPlacement(st, pos.x, pos.y, e && e.altKey, state.stampScale);
+                pushUndo();
                 placeStamp(st, at.x, at.y, state.stampScale);
                 renderDesignCanvas();
             } else if (state.activeTool === 'select') {
@@ -2943,10 +2910,11 @@
         let scaleDrag = null;
         function beginScaleDrag(k, pos) {
             const fixed = selectionHandles(0)[(k + 2) % 4];
-            scaleDrag = { fixed, startDist: Math.max(1, Math.hypot(pos.x - fixed.x, pos.y - fixed.y)), snap: snapshotSelection() };
+            scaleDrag = { fixed, startDist: Math.max(1, Math.hypot(pos.x - fixed.x, pos.y - fixed.y)), snap: snapshotSelection(), undo: captureItems() };
         }
         function moveScaleDrag(pos, e) {
             const d = scaleDrag, s0 = d.snap[0].s;
+            if (d.undo) { pushUndo(d.undo); d.undo = null; }   // recorded once the drag really starts
             let f = Math.hypot(pos.x - d.fixed.x, pos.y - d.fixed.y) / d.startDist;
             if (e.shiftKey) f = Math.max(0.05, Math.round(s0 * f * 20) / 20) / s0;   // 5% steps of the first stamp
             scaleSelectionFrom(d.snap, d.fixed, f);
@@ -2956,11 +2924,12 @@
         // Dragging moves the whole selection; the stamp under the pointer does the snapping
         let moveDrag = null;
         function beginMoveDrag(lead, pos) {
-            moveDrag = { start: pos, lead, moved: false, snap: snapshotSelection() };
+            moveDrag = { start: pos, lead, moved: false, snap: snapshotSelection(), undo: captureItems() };
         }
         function moveMoveDrag(pos, e) {
             const d = moveDrag, lo = d.snap.find(o => o.it === d.lead);
             if (!d.moved && Math.hypot(pos.x - d.start.x, pos.y - d.start.y) * designVP.scale < 3) return;
+            if (!d.moved) pushUndo(d.undo);   // a click without a drag doesn't make a history step
             d.moved = true;
             const at = snapPlacement(d.lead.stamp, lo.x + pos.x - d.start.x, lo.y + pos.y - d.start.y, e.altKey, itemScale(d.lead));
             const dx = at.x - lo.x, dy = at.y - lo.y;
@@ -2985,6 +2954,7 @@
         // ---- Type tool: a caret on the baseline; keys place stamps from the type group ----
         let typeCaret = null;   // { x, y (baseline), lineStartX }
         let typeRun = [];       // what was typed since the caret was set, for Backspace
+        let typeUndoArmed = true;   // the first keystroke after placing the caret records one undo step
 
         function setTypeCaret(pos, bypass) {
             let x = pos.x, y = pos.y;
@@ -2998,6 +2968,7 @@
             }
             typeCaret = { x, y, lineStartX: x };
             typeRun = [];
+            typeUndoArmed = true;
             if (!groupById(state.typeGroup)) toast('Choose a typeable group in the Stamps panel, then type.');
             else toast(`Typing with “${groupById(state.typeGroup).name}”. Enter = new line, ⌫ = undo, Esc = done.`);
         }
@@ -3046,7 +3017,13 @@
             const i = last.item ? state.placedItems.indexOf(last.item) : -1;
             if (i >= 0) state.placedItems.splice(i, 1);
         }
+        // A whole typed run is one undo step
+        function recordTyping() {
+            if (typeUndoArmed) { pushUndo(); typeUndoArmed = false; }
+        }
+
         function typeText(text) {
+            recordTyping();
             for (const ch of text) {
                 if (ch === '\n') typeNewline();
                 else if (ch !== '\r') typeChar(ch);
@@ -3086,6 +3063,7 @@
         for (const [value, label] of BLEND_MODES) blendSelect.append(new Option(label, value));
         blendSelect.addEventListener('change', (e) => {
             if (!e.target.value) return;
+            pushUndo();
             state.selection.forEach(it => { it.blend = e.target.value === 'auto' ? null : e.target.value; });
             renderDesignCanvas();
         });
@@ -3106,6 +3084,7 @@
             const v = parseFloat(e.target.value);
             if (!state.selection.length || !(v > 0)) return;
             const snap = inspectorSnap || takeInspectorSnap(), ref = snap.items[0];
+            scaleEdit();
             // one stamp grows about its centre; a group about its bottom-left, so a word stays put
             const anchor = snap.items.length === 1 ? { x: ref.x, y: ref.y } : { x: snap.bounds.x0, y: snap.bounds.y1 };
             scaleSelectionFrom(snap.items, anchor, (v / 100) / ref.s);
@@ -3115,25 +3094,141 @@
             const v = parseFloat(e.target.value);
             if (!state.selection.length || !isFinite(v)) return;
             const snap = inspectorSnap || takeInspectorSnap();
+            rotateEdit();
             rotateSelectionFrom(snap.items, snap.centre, v * Math.PI / 180 - snap.items[0].r);
             renderDesignCanvas();
         });
         document.getElementById('item-color').addEventListener('input', (e) => {
+            if (!state.selection.length) return;
+            colorEdit();
             state.selection.forEach(it => { it.color = e.target.value; });
             renderDesignCanvas();
         });
         document.getElementById('item-reset').addEventListener('click', () => {
             const sel = state.selection;
+            if (!sel.length) return;
+            pushUndo();
             sel.forEach(it => { it.rotation = 0; it.color = null; it.blend = null; });
             if (sel.length === 1) sel[0].scale = 1;   // a group keeps its sizes and spacing
             renderDesignCanvas();
         });
         function deleteSelection() {
+            if (!state.selection.length) return;
+            pushUndo();
             state.placedItems = state.placedItems.filter(it => !isSelected(it));
             state.selection = [];
             renderDesignCanvas();
         }
         document.getElementById('item-delete').addEventListener('click', deleteSelection);
+        document.getElementById('item-duplicate').addEventListener('click', () => duplicateSelection());
+
+        // ------------------------------------------------------------------
+        // UNDO / REDO (one history per page) and the stamp CLIPBOARD
+        // ------------------------------------------------------------------
+        // History holds the page's stamps as they were before each change. Items are copied
+        // shallowly: they keep their stamp and worn-ink cache, which nothing edits in place.
+        const HISTORY_LIMIT = 100;
+        const fallbackHistory = { undo: [], redo: [] };
+        function pageHistory() {
+            const pg = currentPage();
+            if (!pg) return fallbackHistory;
+            return pg.history || (pg.history = { undo: [], redo: [] });
+        }
+        function captureItems() {
+            return {
+                items: state.placedItems.map(it => ({ ...it })),
+                sel: state.selection.map(it => state.placedItems.indexOf(it)).filter(i => i >= 0),
+                caret: typeCaret ? { ...typeCaret } : null
+            };
+        }
+
+        // Record the page before a change. Changes sharing a tag within a second merge into
+        // one step, so a burst of arrow-key nudges undoes in one go.
+        let lastUndoTag = null, lastUndoAt = 0;
+        function pushUndo(snap = null, tag = null) {
+            const now = Date.now();
+            if (tag && tag === lastUndoTag && now - lastUndoAt < 1000) { lastUndoAt = now; return; }
+            lastUndoTag = tag;
+            lastUndoAt = now;
+            const h = pageHistory();
+            h.undo.push(snap || captureItems());
+            if (h.undo.length > HISTORY_LIMIT) h.undo.shift();
+            h.redo.length = 0;
+            syncHistoryButtons();
+        }
+        function restoreItems(snap) {
+            state.placedItems = snap.items.map(o => ({ ...o }));
+            state.selection = snap.sel.map(i => state.placedItems[i]).filter(Boolean);
+            typeCaret = state.activeTool === 'type' && snap.caret ? { ...snap.caret } : null;
+            typeRun = [];
+            typeUndoArmed = true;
+            lastUndoTag = null;
+            renderDesignCanvas();
+            syncHistoryButtons();
+        }
+        function undo() {
+            const h = pageHistory();
+            if (!h.undo.length) { toast('Nothing to undo on this page.'); return; }
+            h.redo.push(captureItems());
+            restoreItems(h.undo.pop());
+        }
+        function redo() {
+            const h = pageHistory();
+            if (!h.redo.length) { toast('Nothing to redo.'); return; }
+            h.undo.push(captureItems());
+            restoreItems(h.redo.pop());
+        }
+        function syncHistoryButtons() {
+            const h = pageHistory();
+            document.getElementById('btn-undo').disabled = !h.undo.length;
+            document.getElementById('btn-redo').disabled = !h.redo.length;
+        }
+        document.getElementById('btn-undo').addEventListener('click', undo);
+        document.getElementById('btn-redo').addEventListener('click', redo);
+
+        // One undo step per inspector edit: the first change records, later ones in the
+        // same edit (dragging a colour, typing "150") don't
+        function undoSession(field, endEvents) {
+            let open = false;
+            for (const ev of endEvents) field.addEventListener(ev, () => { open = false; });
+            return () => { if (!open) { pushUndo(); open = true; } };
+        }
+        const scaleEdit = undoSession(document.getElementById('item-scale'), ['blur']);
+        const rotateEdit = undoSession(document.getElementById('item-rotate'), ['blur']);
+        const colorEdit = undoSession(document.getElementById('item-color'), ['change', 'blur']);
+
+        // Copies keep size, rotation, ink, blend and wear. Pasting on the same page steps
+        // down-right each time; on another page the first paste lands in place.
+        let clipboard = null;   // { items, pageId, pastes }
+        const pasteStep = () => Math.max(8, Math.round(state.canvasWidth / 160));
+        function copySelection(cut = false) {
+            if (!state.selection.length) return false;
+            const items = state.placedItems.filter(isSelected).map(it => ({ ...it }));   // stacking order
+            clipboard = { items, pageId: currentPage() ? currentPage().id : null, pastes: 0 };
+            if (cut) deleteSelection();
+            toast(`${cut ? 'Cut' : 'Copied'} ${items.length} stamp${items.length > 1 ? 's' : ''}. ⌘/Ctrl+V pastes here or on another page.`);
+            return true;
+        }
+        function addCopies(source, offset) {
+            const copies = source.map(o => ({ ...o, x: o.x + offset, y: o.y + offset }));
+            state.placedItems.push(...copies);
+            if (state.activeTool !== 'select') document.querySelector('.tool-btn[data-tool="select"]').click();
+            state.selection = copies;
+            renderDesignCanvas();
+            return copies;
+        }
+        function pasteClipboard() {
+            if (!clipboard || !clipboard.items.length) { toast('Nothing to paste yet: select stamps and press ⌘/Ctrl+C.'); return; }
+            pushUndo();
+            const samePage = currentPage() && clipboard.pageId === currentPage().id;
+            const k = samePage ? ++clipboard.pastes : clipboard.pastes++;
+            addCopies(clipboard.items, k * pasteStep());
+        }
+        function duplicateSelection() {
+            if (!state.selection.length) return;
+            pushUndo();
+            addCopies(state.placedItems.filter(isSelected), pasteStep());
+        }
 
         // Pointer handling lives on the viewport, so strokes and drags keep working past the
         // board's edge. Space-drag, middle-drag or the Pan tool move the view instead.
@@ -3148,11 +3243,7 @@
             if (e.button !== 0) return;
             designViewportEl.setPointerCapture(e.pointerId);
             state.isInteracting = true;
-            const pos = getDesignPos(e);
-            document.getElementById('stylus-pressure-txt').textContent = `Stylus Pressure: ${pos.pressure.toFixed(2)}`;
-
-            if (state.activeTool === 'burnish') applyBurnishStylus(pos);
-            else handleCanvasClickOrStamp(pos, e);
+            handleCanvasClickOrStamp(getDesignPos(e), e);
         });
 
         designViewportEl.addEventListener('pointermove', (e) => {
@@ -3173,11 +3264,7 @@
                 drawDesignOverlay();
                 return;
             }
-            document.getElementById('stylus-pressure-txt').textContent = `Stylus Pressure: ${pos.pressure.toFixed(2)}`;
-
-            if (state.activeTool === 'burnish') {
-                applyBurnishStylus(pos);
-            } else if (scaleDrag) {
+            if (scaleDrag) {
                 moveScaleDrag(pos, e);
             } else if (moveDrag) {
                 moveMoveDrag(pos, e);
@@ -3210,7 +3297,7 @@
         // ------------------------------------------------------------------
         // KEYBOARD: zoom & pan for both viewports, lasso editing, stamp nudging
         // ------------------------------------------------------------------
-        const TOOL_KEYS = { s: 'stamp', b: 'burnish', v: 'select', t: 'type', h: 'pan' };
+        const TOOL_KEYS = { s: 'stamp', v: 'select', t: 'type', h: 'pan' };
         window.addEventListener('keydown', (e) => {
             if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
                 e.preventDefault();
@@ -3218,6 +3305,27 @@
                 return;
             }
             if (e.target.closest && e.target.closest('input, textarea, select')) return;
+            if ((e.metaKey || e.ctrlKey) && !e.altKey) {
+                const k = e.key.toLowerCase();
+                if (k === 'z' || k === 'y') {
+                    e.preventDefault();
+                    // over the specimen, ⌘Z takes back the last lasso point
+                    if (activeViewport === specimenVP && k === 'z' && !e.shiftKey && state.lassoPoints.length) {
+                        if (state.isLassoClosed) state.isLassoClosed = false;
+                        else state.lassoPoints.pop();
+                        renderSpecimen();
+                    } else if (k === 'y' || e.shiftKey) redo();
+                    else undo();
+                    return;
+                }
+                if (activeViewport !== specimenVP) {
+                    const canEdit = state.activeTool === 'select' && state.selection.length;
+                    if (k === 'c' && canEdit) { e.preventDefault(); copySelection(); return; }
+                    if (k === 'x' && canEdit) { e.preventDefault(); copySelection(true); return; }
+                    if (k === 'd' && canEdit) { e.preventDefault(); duplicateSelection(); return; }
+                    if (k === 'v' && clipboard) { e.preventDefault(); pasteClipboard(); return; }
+                }
+            }
             if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a' && activeViewport !== specimenVP && !(state.activeTool === 'type' && typeCaret)) {
                 // select every stamp on the page
                 e.preventDefault();
@@ -3242,6 +3350,7 @@
                     return;
                 }
                 const step = e.shiftKey ? 10 : 1;
+                if (e.key === 'Enter' || e.key === 'Backspace' || (e.key.length === 1 && !e.altKey)) recordTyping();
                 if (e.key === 'Enter') typeNewline();
                 else if (e.key === 'Backspace') typeBackspace();
                 else if (e.key === 'ArrowLeft') typeCaret.x -= step;
@@ -3294,12 +3403,16 @@
             if (e.key === 'Escape') { state.selection = []; drawDesignOverlay(); return; }
             if (!sel.length) return;
             const step = e.shiftKey ? 10 : 1, turn = (e.shiftKey ? 5 : 0.5) * Math.PI / 180;
-            const nudge = (dx, dy) => sel.forEach(it => { it.x += dx; it.y += dy; });
+            // a burst of nudges or turns is one undo step
+            const nudge = (dx, dy) => { pushUndo(null, 'nudge'); sel.forEach(it => { it.x += dx; it.y += dy; }); };
             if (e.key === 'ArrowLeft') nudge(-step, 0);
             else if (e.key === 'ArrowRight') nudge(step, 0);
             else if (e.key === 'ArrowUp') nudge(0, -step);
             else if (e.key === 'ArrowDown') nudge(0, step);
-            else if (e.key === '[' || e.key === ']') rotateSelectionFrom(snapshotSelection(), selectionCentre(), e.key === ']' ? turn : -turn);
+            else if (e.key === '[' || e.key === ']') {
+                pushUndo(null, 'turn');
+                rotateSelectionFrom(snapshotSelection(), selectionCentre(), e.key === ']' ? turn : -turn);
+            }
             else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelection(); return; }
             else return;
             e.preventDefault();
@@ -3358,15 +3471,14 @@
                 btn.classList.add('btn-active');
                 state.activeTool = btn.getAttribute('data-tool');
 
-                designViewportEl.style.cursor = { stamp: 'crosshair', burnish: 'crosshair', select: 'default', type: 'text', pan: 'grab' }[state.activeTool];
+                designViewportEl.style.cursor = { stamp: 'crosshair', select: 'default', type: 'text', pan: 'grab' }[state.activeTool];
                 designHover = null;
                 snapGuides = null;
                 if (state.activeTool !== 'type') typeCaret = null;
 
                 const toastMap = {
                     stamp: "Stamp: click to place. The preview snaps to the grid; hold Alt to place freely.",
-                    burnish: "Burnish: drag over the paper to rub down dry-transfer ink.",
-                    select: "Select: click or drag a box (Shift adds, ⌘/Ctrl+A all). Drag to move, corners to scale. Arrows nudge, [ ] rotate, Delete removes.",
+                    select: "Select: click or drag a box (Shift adds, ⌘A all). Drag to move, corners to scale. ⌘C / ⌘X / ⌘V / ⌘D copy, cut, paste, duplicate; ⌘Z undo.",
                     type: "Type: click on a baseline to set the caret, then type with the group chosen in the Stamps panel.",
                     pan: "Pan: drag to move around. Space-drag works with any tool."
                 };
@@ -3410,11 +3522,11 @@
         newInkInput.addEventListener('input', (e) => setNewInk(e.target.value));
         document.getElementById('btn-new-ink-reset').addEventListener('click', () => setNewInk(null));
 
-        document.getElementById('btn-reveal-sheet').addEventListener('click', () => resetRubMask(true));
         document.getElementById('btn-clear-canvas').addEventListener('click', () => {
+            if (state.placedItems.length) pushUndo();
             state.placedItems = [];
             state.selection = [];
-            resetRubMask(true);
+            renderDesignCanvas();
         });
 
         // High-Res PNG Export
@@ -3876,6 +3988,7 @@
             applyGridSnapshot(page.grid);
             renderDesignCanvas();
             renderPageBar();
+            syncHistoryButtons();   // each page keeps its own history
         }
 
         function switchPage(id) {
