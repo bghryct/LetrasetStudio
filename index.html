@@ -126,6 +126,20 @@
         .sheet-tab .sheet-close:hover { color: #fafafa; background: #3f3f46; }
         .drop-target { outline: 2px dashed #f59e0b; outline-offset: -6px; }
 
+        /* Effects panel */
+        .fx-warps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 10px; }
+        .fx-warps button {
+            font-size: 10.5px; line-height: 1.2; padding: 6px 4px; border-radius: 6px; background: #18181b; border: 1px solid #27272a; color: #a1a1aa;
+        }
+        .fx-warps button:hover { color: #fafafa; border-color: #52525b; }
+        .fx-warps button.is-on { background: rgba(167, 139, 250, 0.16); color: #ddd6fe; border-color: rgba(167, 139, 250, 0.5); }
+        .fx-slider { margin-bottom: 9px; }
+        .fx-head { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: #a1a1aa; margin-bottom: 3px; }
+        .fx-head span:last-child { color: #71717a; font: 10.5px ui-monospace, SFMono-Regular, Menlo, monospace; }
+        .fx-note { font-size: 10.5px; line-height: 1.45; color: #71717a; margin-bottom: 8px; }
+        .fx-toggle { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; letter-spacing: 0; text-transform: none; color: #a1a1aa; cursor: pointer; }
+        .fx-toggle input { accent-color: #a78bfa; width: 14px; height: 14px; }
+
         /* Mylar Glare Effect */
         .mylar-glare {
             background: linear-gradient(135deg, 
@@ -337,6 +351,9 @@
                     <button id="btn-stamps-panel" class="toggle-chip" title="Stamp library, labels, groups and typesetting">
                         <i data-lucide="library" class="w-3.5 h-3.5"></i> Stamps
                     </button>
+                    <button id="btn-fx-panel" class="toggle-chip" title="Effects: impression, watercolour, plastic goo, distortions and lenses (E)">
+                        <i data-lucide="wand-sparkles" class="w-3.5 h-3.5"></i> Effects
+                    </button>
                     <button id="btn-grid-panel" class="toggle-chip" title="Grid settings">
                         <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
                     </button>
@@ -447,6 +464,9 @@
                     <button data-panel="grid" class="panel-tab px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 text-zinc-400">
                         <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> Grid
                     </button>
+                    <button data-panel="fx" class="panel-tab px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 text-zinc-400">
+                        <i data-lucide="wand-sparkles" class="w-3.5 h-3.5"></i> Effects
+                    </button>
                 </div>
                 <button id="btn-close-grid-panel" class="text-zinc-400 hover:text-zinc-100" title="Close">
                     <i data-lucide="x" class="w-4 h-4"></i>
@@ -454,6 +474,7 @@
             </div>
             <div id="stamps-panel-body" class="flex-1 overflow-y-auto text-xs" style="display: none;"></div>
             <div id="grid-panel-body" class="flex-1 overflow-y-auto text-xs"></div>
+            <div id="fx-panel-body" class="flex-1 overflow-y-auto text-xs" style="display: none;"></div>
         </aside>
     </div>
 
@@ -1612,6 +1633,23 @@
             paperCtx.putImageData(imgData, 0, 0);
         }
 
+        // One stamp, blended onto the page. Work stays inside the stamp's bounding box, which
+        // keeps large pages fast.
+        function drawPlainItem(item, pressure, w, h) {
+            const deg = createDegradedStampCanvas(item, pressure), b = itemDrawBox(item, deg);
+            const x0 = Math.max(0, Math.floor(b.x0)), y0 = Math.max(0, Math.floor(b.y0));
+            const x1 = Math.min(w, Math.ceil(b.x1)), y1 = Math.min(h, Math.ceil(b.y1));
+            if (x1 <= x0 || y1 <= y0) return;
+            const bw = x1 - x0, bh = y1 - y0;
+            // stamp → scratch (offset so its box starts at 0,0)
+            fitScratch(bw, bh);
+            trCtx.globalCompositeOperation = 'source-over';
+            trCtx.clearRect(0, 0, bw, bh);
+            drawItemInto(trCtx, item, deg, x0, y0);
+            designCtx.globalCompositeOperation = itemBlend(item);
+            designCtx.drawImage(transferredCanvas, 0, 0, bw, bh, x0, y0, bw, bh);
+        }
+
         function renderDesignCanvas() {
             const w = designCanvas.width;
             const h = designCanvas.height;
@@ -1621,34 +1659,31 @@
             designCtx.drawImage(paperCanvas, 0, 0);
 
             // Each stamp blends, with its own mode, onto the paper and every stamp beneath it,
-            // so overlapping inks overprint. Work stays inside the stamp's bounding box,
-            // which keeps large pages fast.
+            // so overlapping inks overprint. A set with layer effects (watercolour, goo,
+            // distortion) lands as one layer where its lowest stamp sits; relief goes on last.
+            const quality = fxQuality(), sets = fxCollect(), layered = new Set();
+            fxCost = 0;
             for (const item of state.placedItems) {
-                const degCanvas = createDegradedStampCanvas(item);   // padded, so centre it by its own size
-                const s = itemScale(item), c = Math.abs(Math.cos(item.rotation)), sn = Math.abs(Math.sin(item.rotation));
-                const hw = degCanvas.width / 2 * s, hh = degCanvas.height / 2 * s;
-                const ex = hw * c + hh * sn + 2, ey = hw * sn + hh * c + 2;
-                const x0 = Math.max(0, Math.floor(item.x - ex)), y0 = Math.max(0, Math.floor(item.y - ey));
-                const x1 = Math.min(w, Math.ceil(item.x + ex)), y1 = Math.min(h, Math.ceil(item.y + ey));
-                if (x1 <= x0 || y1 <= y0) continue;
-                const bw = x1 - x0, bh = y1 - y0;
-
-                // stamp → scratch (offset so its box starts at 0,0)
-                fitScratch(bw, bh);
-                trCtx.globalCompositeOperation = 'source-over';
-                trCtx.clearRect(0, 0, bw, bh);
-                trCtx.save();
-                trCtx.translate(item.x - x0, item.y - y0);
-                trCtx.rotate(item.rotation);
-                trCtx.scale(s, s);
-                trCtx.imageSmoothingQuality = 'high';
-                trCtx.drawImage(degCanvas, -degCanvas.width / 2, -degCanvas.height / 2);
-                trCtx.restore();
-
-                designCtx.globalCompositeOperation = itemBlend(item);
-                designCtx.drawImage(transferredCanvas, 0, 0, bw, bh, x0, y0, bw, bh);
+                const S = sets.get(fxSetId(item));
+                if (!fxNeedsLayer(S.rec)) { drawPlainItem(item, S.rec.press.strength, w, h); continue; }
+                if (layered.has(S)) continue;
+                layered.add(S);
+                const L = fxRender(S, quality).layer;
+                if (L) {
+                    designCtx.globalCompositeOperation = L.op;
+                    designCtx.drawImage(L.canvas, L.x, L.y, L.w, L.h);
+                }
+            }
+            for (const S of sets.values()) {
+                const R = S.rec.press.depth ? fxRender(S, quality).relief : null;
+                if (!R) continue;
+                designCtx.globalCompositeOperation = 'multiply';
+                designCtx.drawImage(R.shadow, R.x, R.y, R.w, R.h);
+                designCtx.globalCompositeOperation = 'source-over';
+                designCtx.drawImage(R.light, R.x, R.y, R.w, R.h);
             }
             designCtx.globalCompositeOperation = 'source-over';
+            fxAfterRender(quality, sets);
             markProjectDirty();
 
             const mylar = document.getElementById('mylar-overlay'), m = mylarRecipe();
@@ -2015,12 +2050,12 @@
             return c;
         }
 
-        // Cached per placed stamp: dragging and scaling re-render every frame and
-        // must not recompute the wear; it's rebuilt only when the wear sliders change.
-        function createDegradedStampCanvas(item) {
-            const key = `${state.flaking}|${state.wearNoise}|${item.color || ''}`;
+        // Cached per placed stamp: dragging and scaling re-render every frame and must not
+        // recompute the wear; it's rebuilt only when the wear sliders or the pressure change.
+        function createDegradedStampCanvas(item, pressure = itemPressure(item)) {
+            const key = `${state.flaking}|${state.wearNoise}|${item.color || ''}|${pressure}`;
             if (!item.degraded || item.degraded.key !== key) {
-                const c = degradeStamp(item.stamp, item.seed);
+                let c = degradeStamp(item.stamp, item.seed);
                 if (item.color) {
                     // recolour the worn ink, keeping its alpha (flakes, cracks, edges)
                     const x = c.getContext('2d');
@@ -2029,6 +2064,7 @@
                     x.fillRect(0, 0, c.width, c.height);
                     x.globalCompositeOperation = 'source-over';
                 }
+                if (pressure !== 50) c = pressInk(c, item.seed, pressure);
                 // The wear pass needs a CPU-readable canvas; keep a GPU copy for drawing so
                 // the stamp isn't re-uploaded to the graphics card on every frame
                 const gpu = document.createElement('canvas');
@@ -2061,6 +2097,860 @@
             return isLightInk(item) || state.paperPreset === 'transparent' ? 'source-over' : 'multiply';
         }
         const cssBlend = (op) => op === 'source-over' ? 'normal' : op;
+
+        // ------------------------------------------------------------------
+        // EFFECTS ENGINE: impression, watercolour, plastic goo, distortions & lenses
+        // ------------------------------------------------------------------
+        // Effects belong to an effect set: the page's own (every stamp not in a group) or an
+        // effect group made from a selection. Watercolour, goo and distortions treat a set as
+        // one layer, so its letters bleed, string together and bend as a word. The layer is
+        // built goo → watercolour → distortion, so a lens bends the goo and the bleed too.
+        // Impression changes each stamp's ink and presses the set's final shape into the paper.
+        const FX_WARPS = [
+            { id: 'none', label: 'None' },
+            { id: 'fisheye', label: 'Fisheye', lens: true, amount: 'Magnify ↔ shrink', size: 'Lens size' },
+            { id: 'bulge', label: 'Bulge / pinch', lens: true, amount: 'Bulge ↔ pinch', size: 'Lens size' },
+            { id: 'twirl', label: 'Twirl', lens: true, amount: 'Twist', size: 'Lens size' },
+            { id: 'ripple', label: 'Pond ripple', lens: true, amount: 'Wave height', size: 'Spread', freq: 'Rings' },
+            { id: 'underwater', label: 'Underwater', amount: 'Refraction', size: 'Wave size', freq: 'Turbulence' },
+            { id: 'waves', label: 'Waves', amount: 'Height', size: 'Wavelength', angle: 'Direction' },
+            { id: 'arch', label: 'Arch', amount: 'Bend' },
+            { id: 'flag', label: 'Flag', amount: 'Height', freq: 'Folds' },
+            { id: 'cylinder', label: 'Cylinder lens', lens: true, amount: 'Magnify ↔ shrink', size: 'Lens width', angle: 'Axis' },
+            { id: 'reeded', label: 'Reeded glass', amount: 'Refraction', freq: 'Reeds', angle: 'Axis' },
+            { id: 'lensgrid', label: 'Lens grid', amount: 'Magnify ↔ shrink', freq: 'Lenses' },
+            { id: 'xerox', label: 'Munari xerox', amount: 'Drag', freq: 'Judder', angle: 'Direction' },
+            { id: 'slices', label: 'Slice shift', amount: 'Shift', freq: 'Slices', angle: 'Direction' }
+        ];
+        const FX_WARP = Object.fromEntries(FX_WARPS.map(w => [w.id, w]));
+
+        // Sliders run 0–100 (depth and amount −100–100); 50 pressure is the ink as cut
+        const fxDefaults = () => ({
+            press: { strength: 50, depth: 0, light: 135 },
+            water: { on: false, bleed: 50, bloom: 55, grain: 40, drips: 0 },
+            goo: { on: false, melt: 50, reach: 50, strings: 50, gloss: 60, drips: 0 },
+            warp: { type: 'none', amount: 50, size: 50, freq: 50, angle: 0, cx: 0.5, cy: 0.5 }
+        });
+        const fxClone = (v) => JSON.parse(JSON.stringify(v));
+        function fxNormalize(rec) {
+            const d = fxDefaults();
+            for (const k of Object.keys(d)) Object.assign(d[k], rec && rec[k]);
+            if (!FX_WARP[d.warp.type]) d.warp.type = 'none';
+            return d;
+        }
+        const fxEmpty = () => ({ page: fxDefaults(), sets: {} });
+        function fxNormalizeAll(fx) {
+            const out = { page: fxNormalize(fx && fx.page), sets: {} };
+            for (const [id, rec] of Object.entries((fx && fx.sets) || {})) out.sets[id] = fxNormalize(rec);
+            return out;
+        }
+        state.fx = fxEmpty();   // the live page's effects: { page, sets: { id: rec } }
+
+        const fxSetId = (it) => it.fxSet && state.fx.sets[it.fxSet] ? it.fxSet : 'page';
+        const fxRecOf = (id) => id === 'page' ? state.fx.page : state.fx.sets[id];
+        const itemPressure = (it) => fxRecOf(fxSetId(it)).press.strength;
+        const fxNeedsLayer = (r) => r.water.on || r.goo.on || r.warp.type !== 'none';
+        const fxGet = (rec, key) => key.split('.').reduce((o, k) => o[k], rec);
+        const fxPut = (rec, key, v) => { const ks = key.split('.'), last = ks.pop(); ks.reduce((o, k) => o[k], rec)[last] = v; };
+        const fxInk = (it) => it.color || stampInkHex(it.stamp);
+
+        // Groups whose stamps were all deleted or regrouped are dropped
+        function fxPrune() {
+            const used = new Set(state.placedItems.map(it => it.fxSet).filter(Boolean));
+            for (const id of Object.keys(state.fx.sets)) if (!used.has(id)) delete state.fx.sets[id];
+        }
+        // The page's stamps by effect set, each set's stamps in stacking order
+        function fxCollect() {
+            fxPrune();
+            const sets = new Map();
+            for (const it of state.placedItems) {
+                const id = fxSetId(it);
+                if (!sets.has(id)) sets.set(id, { id, rec: fxRecOf(id), items: [] });
+                sets.get(id).items.push(it);
+            }
+            return sets;
+        }
+
+        // Effect distances follow the type size: a set's typical letter height in page px
+        const fxRefSize = (items) => Math.max(8, median(items.map(it => { const k = stampInkBox(it.stamp); return (k.y1 - k.y0) * itemScale(it); })));
+        const fxReach = (rec, ref) => ref * (0.03 + 0.45 * rec.goo.reach / 100);
+        const fxStrandReach = (rec, ref) => fxReach(rec, ref) * 1.5 + ref * (0.15 + 1.1 * rec.goo.strings / 100);
+        const fxBleed = (rec, ref) => ref * (0.05 + 0.65 * rec.water.bleed / 100);
+
+        // A lens rides on its set's ink box (centre as a fraction of the box, size relative
+        // to it), so it follows the set when the stamps move or scale
+        function fxLensGeom(rec, items) {
+            const B = selectionBounds(items), Bw = Math.max(1, B.x1 - B.x0), Bh = Math.max(1, B.y1 - B.y0), big = Math.max(Bw, Bh), w = rec.warp;
+            return { B, Bw, Bh, big, cx: B.x0 + w.cx * Bw, cy: B.y0 + w.cy * Bh, R: Math.max(4, (0.08 + 1.92 * w.size / 100) * big / 2), angle: w.angle * Math.PI / 180 };
+        }
+
+        function fxCanvas(w, h) {
+            const c = document.createElement('canvas');
+            c.width = Math.max(1, Math.round(w));
+            c.height = Math.max(1, Math.round(h));
+            return c;
+        }
+        const fx2d = (c) => c.getContext('2d', { willReadFrequently: true });
+        // Finished layers are drawn every frame: keep them on the graphics card
+        function toGPU(c) {
+            const g = fxCanvas(c.width, c.height);
+            g.getContext('2d').drawImage(c, 0, 0);
+            return g;
+        }
+
+        // Bilinear read of a periodic noise tile at fractional tile coordinates
+        function tileSample(T, x, y) {
+            const xf = Math.floor(x), yf = Math.floor(y), tx = x - xf, ty = y - yf;
+            const x0 = xf & TMASK, x1 = (xf + 1) & TMASK, r0 = (yf & TMASK) * TILE, r1 = ((yf + 1) & TMASK) * TILE;
+            const top = T[r0 + x0] + (T[r0 + x1] - T[r0 + x0]) * tx;
+            return top + (T[r1 + x0] + (T[r1 + x1] - T[r1 + x0]) * tx - top) * ty;
+        }
+
+        // Where a placed stamp's padded, rotated wear canvas lands, in page px
+        function itemDrawBox(item, deg) {
+            const s = itemScale(item), c = Math.abs(Math.cos(item.rotation)), sn = Math.abs(Math.sin(item.rotation));
+            const hw = deg.width / 2 * s, hh = deg.height / 2 * s;
+            const ex = hw * c + hh * sn + 2, ey = hw * sn + hh * c + 2;
+            return { x0: item.x - ex, y0: item.y - ey, x1: item.x + ex, y1: item.y + ey };
+        }
+        // Draw a placed stamp into a canvas whose top-left is page point (ox, oy), k canvas px per page px
+        function drawItemInto(ctx, item, deg, ox, oy, k = 1) {
+            const s = itemScale(item);
+            ctx.setTransform(k, 0, 0, k, -ox * k, -oy * k);
+            ctx.translate(item.x, item.y);
+            ctx.rotate(item.rotation);
+            ctx.scale(s, s);
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(deg, -deg.width / 2, -deg.height / 2);
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+        }
+
+        // ---- Impression pressure, on each stamp's own ink ----
+        // A light rub leaves starved, broken ink wherever the paper's tooth never met the
+        // film, edges first. A hard one squashes ink out into a darker rim, fattens the
+        // strokes and fills pinholes. 50 leaves the ink as cut.
+        function pressInk(c, seed, pressure) {
+            const p = (pressure - 50) / 50;
+            let cv = c;
+            if (p > 0) {   // room for the squash
+                const pad = 2 + Math.ceil(p * 3);
+                cv = fxCanvas(c.width + pad * 2, c.height + pad * 2);
+                fx2d(cv).drawImage(c, pad, pad);
+            }
+            const w = cv.width, h = cv.height, n = w * h, x = fx2d(cv), img = x.getImageData(0, 0, w, h), d = img.data;
+            const A = new Float32Array(n);
+            let best = 0;
+            for (let i = 0; i < n; i++) { A[i] = d[i * 4 + 3] / 255; if (d[i * 4 + 3] > d[best * 4 + 3]) best = i; }
+            const ink = [d[best * 4], d[best * 4 + 1], d[best * 4 + 2]];
+            if (p < 0) {
+                const kq = -p, T = getWearTiles(), E = boxBlur(A, w, h, 2, 2);
+                const ox = Math.floor(hash2(seed, 5, 17) * TILE), oy = Math.floor(hash2(seed, 6, 19) * TILE);
+                for (let y = 0; y < h; y++) {
+                    for (let xx = 0; xx < w; xx++) {
+                        const k = y * w + xx;
+                        if (A[k] === 0) continue;
+                        const ti = ((y + oy) & TMASK) * TILE + ((xx + ox) & TMASK);
+                        const tooth = T.fine[ti] * 0.55 + T.mid[ti] * 0.45;
+                        const th = kq * 0.78 * (1.2 - 0.5 * E[k]);
+                        d[k * 4 + 3] = A[k] * smooth(th - 0.07, th + 0.07, tooth) * (1 - kq * 0.18) * 255;
+                    }
+                }
+            } else {
+                const E = boxBlur(A, w, h, 1 + Math.round(p * 2.5), 2);
+                for (let k = 0; k < n; k++) {
+                    const a = Math.max(A[k], smooth(0.5 - 0.34 * p, 0.5 - 0.1 * p, E[k]) * 0.92);
+                    if (a <= 0) continue;
+                    // squeezed-out ink and the stroke's inner edge run darker
+                    const rim = Math.min(1, (a - A[k]) * 1.5 + (1 - E[k]) * A[k] * 0.8), dark = 1 - 0.4 * p * rim, q = k * 4;
+                    if (A[k] < 0.02) { d[q] = ink[0]; d[q + 1] = ink[1]; d[q + 2] = ink[2]; }
+                    d[q] *= dark; d[q + 1] *= dark; d[q + 2] *= dark;
+                    d[q + 3] = a * 255;
+                }
+            }
+            x.putImageData(img, 0, 0);
+            return cv;
+        }
+
+        // ---- Layer cache & quality ----
+        // Layers are rebuilt only when a set's stamps or settings change. While something is
+        // being dragged (or renders come thick and fast) they're drafted at lower resolution,
+        // and a sharp render follows once things settle.
+        const fxCache = new Map();     // `${page}|${set}` → { draft, final }: { key, out }
+        let fxDraftShown = false, fxSliding = false, fxSlow = false, fxForceSharp = false, fxCost = 0;
+        let lastRenderAt = 0, fxSharpTimer = 0;
+
+        function fxQuality() {
+            if (fxForceSharp) return 'final';
+            return state.isInteracting || fxSliding || (fxSlow && performance.now() - lastRenderAt < 220) ? 'draft' : 'final';
+        }
+        function fxSetKey(S, quality) {
+            const parts = [JSON.stringify(S.rec), state.flaking, state.wearNoise, state.paperPreset, quality];
+            for (const it of S.items) {
+                parts.push(`${it.stamp.id},${it.x.toFixed(2)},${it.y.toFixed(2)},${itemScale(it).toFixed(4)},${it.rotation.toFixed(4)},${it.color || ''},${it.blend || ''},${it.seed}`);
+            }
+            return parts.join('|');
+        }
+        function fxRender(S, quality) {
+            const page = currentPage(), ck = `${page ? page.id : ''}|${S.id}`, key = fxSetKey(S, quality);
+            const slot = fxCache.get(ck) || {};
+            if (slot[quality] && slot[quality].key === key) return slot[quality].out;
+            const t0 = performance.now();
+            const layer = fxNeedsLayer(S.rec) ? fxBuildLayer(S, quality) : null;
+            const out = { layer, relief: S.rec.press.depth ? fxBuildRelief(S, quality, layer) : null };
+            slot[quality] = { key, out };
+            fxCache.set(ck, slot);
+            fxCost += performance.now() - t0;
+            return out;
+        }
+        function fxAfterRender(quality, sets) {
+            lastRenderAt = performance.now();
+            if (quality === 'final') fxSlow = fxCost > 70;
+            fxDraftShown = quality === 'draft' && [...sets.values()].some(S => fxNeedsLayer(S.rec) || S.rec.press.depth);
+            clearTimeout(fxSharpTimer);
+            if (fxDraftShown) fxSharpTimer = setTimeout(() => { if (!state.isInteracting && !fxSliding) renderDesignCanvas(); }, 260);
+            // forget layers of sets that are gone
+            const page = currentPage(), pre = `${page ? page.id : ''}|`;
+            for (const ck of fxCache.keys()) {
+                if (ck.startsWith(pre) ? !sets.has(ck.slice(pre.length)) : fxCache.size > 24) fxCache.delete(ck);
+            }
+        }
+
+        // An effect group lands as one layer, so its stamps share one blend mode
+        function fxBlend(S) {
+            const own = S.items.find(it => it.blend);
+            if (own) return own.blend;
+            if (S.rec.goo.on) return 'source-over';   // opaque plastic; multiply would also swallow its white gloss
+            return itemBlend(S.items[0]);
+        }
+
+        function fxBuildLayer(S, quality) {
+            const r = S.rec, items = S.items, W = state.canvasWidth, H = state.canvasHeight;
+            const ref = fxRefSize(items), B = selectionBounds(items), big = Math.max(B.x1 - B.x0, B.y1 - B.y0);
+            // room for the ink the effects carry past the stamps
+            let m = ref * 0.15 + 6;
+            if (r.goo.on) m += fxReach(r, ref) * 1.5 + fxStrandReach(r, ref) * 0.45 + ref * 1.4 * r.goo.drips / 100;
+            if (r.water.on) m += fxBleed(r, ref) * 1.6 + ref * 1.9 * r.water.drips / 100;
+            if (r.warp.type !== 'none') m += Math.abs(r.warp.amount) / 100 * big * 0.35 + ref * 0.2;
+            const x0 = Math.max(0, Math.floor(B.x0 - m)), y0 = Math.max(0, Math.floor(B.y0 - m));
+            const x1 = Math.min(W, Math.ceil(B.x1 + m)), y1 = Math.min(H, Math.ceil(B.y1 + m));
+            if (x1 <= x0 || y1 <= y0) return null;
+            const w = x1 - x0, h = y1 - y0;
+            // very large sets are worked below page resolution
+            const k = Math.min(1, Math.sqrt((quality === 'draft' ? 0.5e6 : 4e6) / (w * h)));
+            const C = { x0, y0, w, h, k, cw: Math.max(1, Math.round(w * k)), ch: Math.max(1, Math.round(h * k)), ref, rec: r, items, quality };
+            let layer = fxCanvas(C.cw, C.ch);
+            const lc = fx2d(layer);
+            for (const it of items) drawItemInto(lc, it, createDegradedStampCanvas(it, r.press.strength), x0, y0, k);
+            if (r.goo.on) layer = fxGoo(layer, C);
+            if (r.water.on) layer = fxWater(layer, C);
+            if (r.warp.type !== 'none') layer = fxWarp(layer, C);
+            return { canvas: toGPU(layer), x: x0, y: y0, w, h, op: fxBlend(S) };
+        }
+
+        // Ink as separate alpha and premultiplied colour planes
+        function fxPlanes(d, n) {
+            const A = new Float32Array(n), R = new Float32Array(n), G = new Float32Array(n), B = new Float32Array(n);
+            for (let i = 0; i < n; i++) {
+                const a = d[i * 4 + 3] / 255;
+                A[i] = a; R[i] = d[i * 4] * a; G[i] = d[i * 4 + 1] * a; B[i] = d[i * 4 + 2] * a;
+            }
+            return { A, R, G, B };
+        }
+
+        // ---- Plastic goo ----
+        // Each letter melts a little on its own (rounded, slightly swollen). Between letters,
+        // goo forms only where two of them reach each other: at every pixel the two strongest
+        // per-letter fields are kept, and a metaball neck grows where both are present, so
+        // counters stay open while neighbours fuse. Sagging, beaded strands stretch to letters
+        // a little further off, cross-threads turn crowded strands into a web, and gloss
+        // shades the result like extruded, shiny plastic.
+        function fxGoo(src, C) {
+            const { cw, ch, k, x0, y0, ref, rec, items, quality } = C, melt = rec.goo.melt / 100, gloss = rec.goo.gloss / 100;
+            const strands = fxStrands(src, C);
+            if (rec.goo.drips > 0) fxGooDrips(strands, src, C);
+            const q = Math.min(1, Math.sqrt((quality === 'draft' ? 0.2e6 : 1e6) / (cw * ch)));
+            const fw = Math.max(1, Math.round(cw * q)), fh = Math.max(1, Math.round(ch * q)), n = fw * fh, kq = k * q;
+            const fc = fxCanvas(fw, fh), fx = fx2d(fc);
+            fx.imageSmoothingQuality = 'high';
+            fx.drawImage(src, 0, 0, fw, fh);
+            const fd = fx.getImageData(0, 0, fw, fh), d = fd.data, P = fxPlanes(d, n);
+            const rad = Math.max(1, Math.round(fxReach(rec, ref) * kq));
+            const f1 = new Float32Array(n), f2 = new Float32Array(n);
+            const merge = (F, ox, oy, rw, rh) => {
+                for (let y = 0; y < rh; y++) {
+                    for (let x = 0; x < rw; x++) {
+                        const v = F[y * rw + x];
+                        if (v < 0.004) continue;
+                        const i = (y + oy) * fw + x + ox;
+                        if (v > f1[i]) { f2[i] = f1[i]; f1[i] = v; } else if (v > f2[i]) f2[i] = v;
+                    }
+                }
+            };
+            const pad = rad * 3 + 2;
+            for (const it of items) {
+                const b = selectionBounds([it]);
+                const ox = Math.max(0, Math.floor((b.x0 - x0) * kq) - pad), oy = Math.max(0, Math.floor((b.y0 - y0) * kq) - pad);
+                const ex = Math.min(fw, Math.ceil((b.x1 - x0) * kq) + pad), ey = Math.min(fh, Math.ceil((b.y1 - y0) * kq) + pad);
+                if (ex <= ox || ey <= oy) continue;
+                const rw = ex - ox, rh = ey - oy, tc = fxCanvas(rw, rh), tx = fx2d(tc);
+                drawItemInto(tx, it, createDegradedStampCanvas(it, rec.press.strength), x0 + ox / kq, y0 + oy / kq, kq);
+                const td = tx.getImageData(0, 0, rw, rh).data, A = new Float32Array(rw * rh);
+                for (let i = 0; i < A.length; i++) A[i] = td[i * 4 + 3] / 255;
+                merge(boxBlur(A, rw, rh, rad, 3), ox, oy, rw, rh);
+            }
+            // strands count as one more "letter", so they grow fillets where they meet the ink
+            const sc = fxCanvas(fw, fh), sx = fx2d(sc);
+            sx.imageSmoothingQuality = 'high';
+            sx.drawImage(strands, 0, 0, fw, fh);
+            const sdat = sx.getImageData(0, 0, fw, fh).data, SA = new Float32Array(n);
+            let strung = false;
+            for (let i = 0; i < n; i++) { SA[i] = sdat[i * 4 + 3] / 255; if (SA[i]) strung = true; }
+            if (strung) merge(boxBlur(SA, fw, fh, Math.max(1, Math.round(rad * 0.5)), 3), 0, 0, fw, fh);
+            const Fs = boxBlur(P.A, fw, fh, Math.max(1, Math.round(ref * 0.02 * kq)), 2);
+            // colour spreads wider than the shape, so a bridge takes its neighbours' inks
+            const rc = Math.max(1, Math.round(rad * 1.2));
+            const CA = boxBlur(P.A, fw, fh, rc, 2), CR = boxBlur(P.R, fw, fh, rc, 2), CG = boxBlur(P.G, fw, fh, rc, 2), CB = boxBlur(P.B, fw, fh, rc, 2);
+            const t = 0.5 - 0.3 * melt, ts = 0.5 - 0.2 * melt, V = new Float32Array(n);
+            for (let i = 0; i < n; i++) V[i] = Math.max(f1[i] + f2[i] - t - 0.3 * (1 - smooth(0.03, 0.09, f2[i])), Fs[i] - ts);
+            for (let y = 0; y < fh; y++) {
+                for (let x = 0; x < fw; x++) {
+                    const i = y * fw + x, ca = Math.max(1e-5, CA[i]), q4 = i * 4;
+                    d[q4] = CR[i] / ca; d[q4 + 1] = CG[i] / ca; d[q4 + 2] = CB[i] / ca;
+                    // value ÷ slope ≈ distance to the goo's edge in field px, so the edge stays one
+                    // pixel wide even where the field is nearly flat (between two letters it is)
+                    const gx = (V[i + (x < fw - 1 ? 1 : 0)] - V[i - (x > 0 ? 1 : 0)]) * 0.5;
+                    const gy = (V[i + (y < fh - 1 ? fw : 0)] - V[i - (y > 0 ? fw : 0)]) * 0.5;
+                    d[q4 + 3] = Math.max(0, Math.min(1, 0.5 + 0.5 * V[i] / Math.max(1e-4, Math.hypot(gx, gy)))) * 255;
+                }
+            }
+            fx.putImageData(fd, 0, 0);
+            const body = fxCanvas(cw, ch), bx = fx2d(body);
+            bx.imageSmoothingQuality = 'high';
+            bx.drawImage(fc, 0, 0, cw, ch);
+            const bd = bx.getImageData(0, 0, cw, ch), b = bd.data;
+            for (let i = 3; i < b.length; i += 4) b[i] = 255 * smooth(0.4, 0.6, b[i] / 255);
+            bx.putImageData(bd, 0, 0);
+            bx.drawImage(strands, 0, 0);
+            bx.drawImage(src, 0, 0);
+            if (gloss <= 0.01) return body;
+            fxGloss(body, C, q);
+            // a soft shadow under the raised plastic
+            const out = fxCanvas(cw, ch), ox = fx2d(out);
+            ox.shadowColor = `rgba(24, 18, 12, ${0.32 * gloss})`;
+            ox.shadowBlur = Math.max(1, ref * 0.05 * k);
+            ox.shadowOffsetX = ref * 0.015 * k;
+            ox.shadowOffsetY = ref * 0.035 * k;
+            ox.drawImage(body, 0, 0);
+            return out;
+        }
+
+        // Light the goo as a thick, glossy surface: its height is the blurred shape
+        function fxGloss(body, C, q) {
+            const { cw, ch, k, ref, rec } = C, gloss = rec.goo.gloss / 100;
+            const fw = Math.max(1, Math.round(cw * q)), fh = Math.max(1, Math.round(ch * q)), n = fw * fh;
+            const sc = fxCanvas(fw, fh), sx = fx2d(sc);
+            sx.imageSmoothingQuality = 'high';
+            sx.drawImage(body, 0, 0, fw, fh);
+            const src = sx.getImageData(0, 0, fw, fh).data, A = new Float32Array(n);
+            for (let i = 0; i < n; i++) A[i] = src[i * 4 + 3] / 255;
+            const r2 = Math.max(1, Math.round(ref * 0.04 * k * q)), Hh = boxBlur(A, fw, fh, r2, 3), s = r2 * 3.2;
+            const Lx = -0.42, Ly = -0.62, Lz = 0.66;                 // light from the upper left
+            const hl = Math.hypot(Lx, Ly, Lz + 1), hx = Lx / hl, hy = Ly / hl, hz = (Lz + 1) / hl;
+            const shin = 18 + 70 * gloss;
+            const dark = new ImageData(fw, fh), lite = new ImageData(fw, fh), D = dark.data, L = lite.data;
+            for (let y = 0; y < fh; y++) {
+                for (let x = 0; x < fw; x++) {
+                    const i = y * fw + x;
+                    if (A[i] < 0.01) continue;
+                    const gx = (Hh[i + (x < fw - 1 ? 1 : 0)] - Hh[i - (x > 0 ? 1 : 0)]) * s;
+                    const gy = (Hh[i + (y < fh - 1 ? fw : 0)] - Hh[i - (y > 0 ? fw : 0)]) * s;
+                    const nl = Math.hypot(gx, gy, 1), nx = -gx / nl, ny = -gy / nl, nz = 1 / nl;
+                    const diff = (nx * Lx + ny * Ly + nz * Lz) / Lz;     // 1 = facing straight up
+                    const spec = Math.pow(Math.max(0, nx * hx + ny * hy + nz * hz), shin) * gloss * 1.6;
+                    const q4 = i * 4;
+                    D[q4 + 3] = Math.min(0.6, Math.max(0, 1 - diff) * (0.35 + 0.4 * gloss)) * 255;
+                    L[q4] = L[q4 + 1] = L[q4 + 2] = 255;
+                    L[q4 + 3] = Math.min(0.9, spec + Math.max(0, diff - 1) * 0.25) * 255;
+                }
+            }
+            const dc = fxCanvas(fw, fh), lc = fxCanvas(fw, fh);
+            dc.getContext('2d').putImageData(dark, 0, 0);
+            lc.getContext('2d').putImageData(lite, 0, 0);
+            const bx = fx2d(body);
+            bx.globalCompositeOperation = 'source-atop';   // shade the goo, never the paper
+            bx.imageSmoothingQuality = 'high';
+            bx.drawImage(dc, 0, 0, cw, ch);
+            bx.drawImage(lc, 0, 0, cw, ch);
+            bx.globalCompositeOperation = 'source-over';
+        }
+
+        // Strings between neighbouring letters, anchored on real ink on the facing sides
+        function fxStrands(src, C) {
+            const { cw, ch, k, x0, y0, ref, rec, items } = C, amt = rec.goo.strings / 100, melt = rec.goo.melt / 100;
+            const out = fxCanvas(cw, ch);
+            if (amt < 0.02 || items.length < 2) return out;
+            const sd = fx2d(src).getImageData(0, 0, cw, ch).data;
+            const inkAt = (px, py) => {
+                const x = Math.round((px - x0) * k), y = Math.round((py - y0) * k);
+                return x >= 0 && y >= 0 && x < cw && y < ch && sd[(y * cw + x) * 4 + 3] > 140;
+            };
+            const boxes = items.map(it => selectionBounds([it]));
+            const reach = fxStrandReach(rec, ref), ctx = fx2d(out), all = [];
+            ctx.setTransform(k, 0, 0, k, -x0 * k, -y0 * k);
+            // a point of ink on stamp i, mostly on the side facing (tx, ty)
+            const anchor = (rng, i, tx, ty) => {
+                const b = boxes[i], cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2, ux = tx - cx, uy = ty - cy;
+                const found = [];
+                for (let t = 0; t < 40 && found.length < 12; t++) {
+                    const px = b.x0 + rng() * (b.x1 - b.x0), py = b.y0 + rng() * (b.y1 - b.y0);
+                    if (inkAt(px, py)) found.push({ x: px, y: py, f: (px - cx) * ux + (py - cy) * uy });
+                }
+                if (!found.length) return null;
+                found.sort((p, q2) => q2.f - p.f);
+                return found[Math.floor(Math.pow(rng(), 1.6) * found.length * 0.6)];
+            };
+            for (let i = 0; i < items.length; i++) {
+                for (let j = i + 1; j < items.length; j++) {
+                    const a = boxes[i], b = boxes[j];
+                    const gap = Math.hypot(Math.max(0, a.x0 - b.x1, b.x0 - a.x1), Math.max(0, a.y0 - b.y1, b.y0 - a.y1));
+                    if (gap > reach) continue;
+                    const rng = mulberry32(((items[i].seed * 7919) ^ (items[j].seed * 104729)) >>> 0 || 1);
+                    const count = Math.round(amt * (1 + (1 - gap / reach) * 5) * (0.6 + rng() * 0.8));
+                    const ci = fxInk(items[i]), cj = fxInk(items[j]);
+                    for (let s = 0; s < count; s++) {
+                        const pa = anchor(rng, i, (b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2), pb = anchor(rng, j, (a.x0 + a.x1) / 2, (a.y0 + a.y1) / 2);
+                        if (pa && pb) all.push(fxStrand(ctx, rng, pa, pb, ci, cj, ref, melt, amt, false));
+                    }
+                }
+            }
+            // cross-threads between strands that pass near each other make the web
+            for (let s = 0; s < all.length; s++) {
+                const rng = mulberry32((Math.imul(s + 1, 2654435761) ^ items.length) >>> 0 || 1), A = all[s];
+                if (rng() > amt * 0.7) continue;
+                let other = null, od = Infinity;
+                for (const B of all) {
+                    if (B === A) continue;
+                    const dd = Math.hypot(B.mx - A.mx, B.my - A.my);
+                    if (dd < od) { od = dd; other = B; }
+                }
+                if (!other || od > A.len * 1.2 + ref * 0.3) continue;
+                fxStrand(ctx, rng, A.at(0.25 + rng() * 0.5), other.at(0.25 + rng() * 0.5), A.c0, other.c1, ref, 0, amt, true);
+            }
+            return out;
+        }
+
+        // One drooping thread: a quadratic curve, thick where it leaves the letters and thin in
+        // the middle, with beads where it started to break up. Drawn in page coordinates.
+        function fxStrand(ctx, rng, p0, p1, c0, c1, ref, melt, amt, thin) {
+            const len = Math.hypot(p1.x - p0.x, p1.y - p0.y) || 1, nx = -(p1.y - p0.y) / len, ny = (p1.x - p0.x) / len;
+            const sag = len * (0.08 + rng() * 0.3) * (0.5 + amt * 0.6), side = (rng() - 0.5) * len * 0.22;
+            const cx = (p0.x + p1.x) / 2 + nx * side, cy = (p0.y + p1.y) / 2 + ny * side + sag;   // gravity pulls down
+            const at = (t) => { const u = 1 - t; return { x: u * u * p0.x + 2 * u * t * cx + t * t * p1.x, y: u * u * p0.y + 2 * u * t * cy + t * t * p1.y }; };
+            const wEnd = thin ? ref * 0.008 : ref * (0.022 + 0.035 * rng()) * (0.6 + melt * 0.8);
+            const wMid = Math.max(0.5, ref * (thin ? 0.003 : 0.005 + 0.009 * rng()));
+            const N = 32, left = [], right = [];
+            for (let s = 0; s <= N; s++) {
+                const t = s / N, u = 1 - t, p = at(t);
+                const tx = 2 * u * (cx - p0.x) + 2 * t * (p1.x - cx), ty = 2 * u * (cy - p0.y) + 2 * t * (p1.y - cy), tl = Math.hypot(tx, ty) || 1;
+                const hw = (wMid + (wEnd - wMid) * Math.pow(Math.abs(2 * t - 1), 3)) / 2;
+                left.push(p.x - ty / tl * hw, p.y + tx / tl * hw);
+                right.push(p.x + ty / tl * hw, p.y - tx / tl * hw);
+            }
+            const grad = ctx.createLinearGradient(p0.x, p0.y, p1.x, p1.y);
+            grad.addColorStop(0, c0);
+            grad.addColorStop(1, c1);
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.moveTo(left[0], left[1]);
+            for (let s = 2; s < left.length; s += 2) ctx.lineTo(left[s], left[s + 1]);
+            for (let s = right.length - 2; s >= 0; s -= 2) ctx.lineTo(right[s], right[s + 1]);
+            ctx.closePath();
+            ctx.fill();
+            const beads = thin ? 0 : Math.floor(rng() * 3.2 * amt);
+            for (let b = 0; b < beads; b++) {
+                const p = at(0.2 + rng() * 0.6);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, wMid * (1.4 + rng() * 2.4), 0, Math.PI * 2);
+                ctx.fill();
+            }
+            const mid = at(0.5);
+            return { at, len, mx: mid.x, my: mid.y, c0, c1 };
+        }
+
+        // ---- Drips: liquid ink or molten plastic running down under gravity ----
+        // They leave from the lowest ink in a few random columns of each stamp
+        function fxDripSources(src, C, amount, salt) {
+            const { cw, ch, k, x0, y0, items } = C, sd = fx2d(src).getImageData(0, 0, cw, ch).data, out = [];
+            for (const it of items) {
+                const rng = mulberry32(((it.seed * 2654435761) ^ salt) >>> 0 || 1), b = selectionBounds([it]);
+                const n = Math.round(amount * (1.2 + 3.3 * rng()));
+                const top = Math.max(0, Math.floor((b.y0 - y0) * k)), bottom = Math.min(ch - 1, Math.ceil((b.y1 - y0) * k) + 2);
+                for (let s = 0; s < n; s++) {
+                    for (let t = 0; t < 8; t++) {
+                        const px = b.x0 + (0.08 + 0.84 * rng()) * (b.x1 - b.x0), cx = Math.round((px - x0) * k);
+                        if (cx < 0 || cx >= cw) continue;
+                        let low = -1;
+                        for (let y = bottom; y >= top; y--) if (sd[(y * cw + cx) * 4 + 3] > 150) { low = y; break; }
+                        if (low >= 0) { out.push({ x: px, y: y0 + (low + 0.5) / k, it, rng }); break; }
+                    }
+                }
+            }
+            return out;
+        }
+        // One run: it leaves the letter in a small flare, narrows and wanders as it falls, and
+        // ends in a bead where the liquid gathers. Drawn in page coordinates as one path, so a
+        // see-through (watercolour) drip doesn't double up where its parts overlap.
+        function fxDrip(ctx, rng, x, y, len, w, color, bead, alpha) {
+            const N = 24, wob = w * 0.7, ph = rng() * 6.28, L = [], R = [];
+            for (let s = 0; s <= N; s++) {
+                const t = s / N, cx = x + Math.sin(ph + t * 2.6) * wob * t, cy = y + t * len, hw = w * (1 - 0.5 * Math.sqrt(t)) / 2;
+                L.push(cx - hw, cy);
+                R.push(cx + hw, cy);
+            }
+            const ex = (L[L.length - 2] + R[R.length - 2]) / 2, ey = y + len;
+            ctx.save();
+            ctx.fillStyle = color;
+            ctx.globalAlpha = alpha;
+            ctx.beginPath();
+            ctx.moveTo(L[0], L[1]);
+            for (let i = 2; i < L.length; i += 2) ctx.lineTo(L[i], L[i + 1]);
+            for (let i = R.length - 2; i >= 0; i -= 2) ctx.lineTo(R[i], R[i + 1]);
+            ctx.closePath();
+            // same winding as the run (anticlockwise on screen), so overlaps stay filled
+            ctx.moveTo(x + w * 0.9, y);
+            ctx.ellipse(x, y, w * 0.9, w * 0.45, 0, 0, Math.PI * 2, true);
+            ctx.moveTo(ex + w * bead * 0.5, ey);
+            ctx.ellipse(ex, ey, w * bead * 0.5, w * bead * 0.62, 0, 0, Math.PI * 2, true);
+            ctx.fill();
+            if (alpha < 1) {   // pigment pools in the bead
+                ctx.globalAlpha = Math.min(1, alpha * 0.8);
+                ctx.beginPath();
+                ctx.ellipse(ex, ey + w * bead * 0.15, w * bead * 0.38, w * bead * 0.42, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+        // Molten plastic sags off the bottoms of the letters and hangs in beaded drips
+        function fxGooDrips(canvas, src, C) {
+            const { k, x0, y0, ref, rec } = C, amt = rec.goo.drips / 100, melt = rec.goo.melt / 100, ctx = fx2d(canvas);
+            ctx.setTransform(k, 0, 0, k, -x0 * k, -y0 * k);
+            for (const d of fxDripSources(src, C, amt, 0x51ed)) {
+                const w = ref * (0.03 + 0.03 * d.rng()) * (0.7 + 0.6 * melt);
+                fxDrip(ctx, d.rng, d.x, d.y - w * 0.3, ref * (0.12 + 1.1 * amt * d.rng()), w, fxInk(d.it), 1.7 + d.rng() * 0.8, 1);
+            }
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+        }
+
+        // ---- Watercolour ----
+        // Pigment spreads from the strokes into wet paper and thins as it goes: a near field
+        // feathers the strokes, a far field pools between them. The wet front is that spread,
+        // warped by large, slow noise so it wanders like real water, and pigment piles up
+        // along it (the dark tide line). A second front makes cauliflower backruns, and
+        // granulation settles into the paper's tooth. Noise is read in page coordinates, so
+        // the bleed holds still when the set is redrawn.
+        function fxSampleField(F, w, h, x, y) {
+            x = Math.max(0, Math.min(w - 1.001, x));
+            y = Math.max(0, Math.min(h - 1.001, y));
+            const xi = x | 0, yi = y | 0, tx = x - xi, ty = y - yi, i = yi * w + xi;
+            const top = F[i] + (F[i + 1] - F[i]) * tx, bot = F[i + w] + (F[i + w + 1] - F[i + w]) * tx;
+            return top + (bot - top) * ty;
+        }
+        function fxWater(src, C) {
+            const { cw, ch, k, x0, y0, ref, rec, quality } = C;
+            const bleed = rec.water.bleed / 100, bloom = rec.water.bloom / 100, grain = rec.water.grain / 100;
+            const q = Math.min(1, Math.sqrt((quality === 'draft' ? 0.25e6 : 1.5e6) / (cw * ch)));
+            const fw = Math.max(1, Math.round(cw * q)), fh = Math.max(1, Math.round(ch * q)), n = fw * fh, kq = k * q;
+            const fc = fxCanvas(fw, fh), fx = fx2d(fc);
+            fx.imageSmoothingQuality = 'high';
+            fx.drawImage(src, 0, 0, fw, fh);
+            const fd = fx.getImageData(0, 0, fw, fh), d = fd.data, P = fxPlanes(d, n);
+            const sp = Math.max(2, fxBleed(rec, ref) * kq);   // how far the water carries pigment, in field px
+            const Fn = boxBlur(P.A, fw, fh, Math.max(1, Math.round(sp * 0.3)), 3);   // feathering
+            const Ff = boxBlur(P.A, fw, fh, Math.max(1, Math.round(sp * 0.75)), 3);  // pooling
+            const rc = Math.max(1, Math.round(sp * 0.9));   // colour travels with the water
+            const CA = boxBlur(P.A, fw, fh, rc, 2), CR = boxBlur(P.R, fw, fh, rc, 2), CG = boxBlur(P.G, fw, fh, rc, 2), CB = boxBlur(P.B, fw, fh, rc, 2);
+            const core = boxBlur(P.A, fw, fh, Math.max(0, Math.round(ref * kq * (0.004 + 0.02 * bleed))), 2);
+            const T = getWearTiles();
+            const sw = 8 / (sp / kq * 1.6), sb = 8 / (ref * 0.5), sg = 2.2 / 3.5;   // noise tile px per page px: wander, blooms, paper tooth
+            const warp = sp * 0.8, keep = 0.95 - 0.4 * bleed;
+            for (let y = 0; y < fh; y++) {
+                const py = y0 + (y + 0.5) / kq;
+                for (let x = 0; x < fw; x++) {
+                    const i = y * fw + x, q4 = i * 4;
+                    if (Ff[i] < 0.004 && P.A[i] === 0) { d[q4 + 3] = 0; continue; }
+                    const px = x0 + (x + 0.5) / kq;
+                    // the front wanders: read the spread a little off to one side
+                    const wx = x + (tileSample(T.mid, px * sw, py * sw) - 0.5) * warp * 2;
+                    const wy = y + (tileSample(T.mid, px * sw + 157, py * sw + 263) - 0.5) * warp * 2;
+                    const near = fxSampleField(Fn, fw, fh, wx, wy), far = fxSampleField(Ff, fw, fh, wx, wy);
+                    const reach = Math.max(near * 1.6, far * (1.4 + bleed));
+                    const nb = tileSample(T.mid, px * sb, py * sb);
+                    const thr = 0.1 + (nb - 0.5) * 0.08 + (tileSample(T.fine, px * sb * 4, py * sb * 4) - 0.5) * 0.03;
+                    const wet = smooth(thr - 0.012, thr + 0.012, reach);
+                    const pigment = wet * (0.07 + 0.55 * Math.min(1, reach * 1.3)) * (1 - 0.2 * bleed);
+                    const tide = wet * (1 - smooth(thr, thr + 0.03 + 0.06 * (1 - bloom), reach)) * (0.2 + 0.55 * bloom);
+                    const thr2 = thr + 0.16 + (tileSample(T.mid, px * sb + 211, py * sb + 97) - 0.5) * 0.18;
+                    const back = smooth(thr2 - 0.01, thr2 + 0.01, reach) * (1 - smooth(thr2, thr2 + 0.035, reach)) * bloom * 0.3;
+                    let dens = Math.max(pigment + tide + back, Math.min(1, core[i] * 1.15) * keep);
+                    const tooth = tileSample(T.fine, px * sg, py * sg);
+                    dens *= 1 - grain * (0.55 * (1 - tooth) + 0.25 * nb);
+                    const ca = Math.max(1e-5, CA[i]), darken = 1 - 0.3 * tide;
+                    d[q4] = CR[i] / ca * darken; d[q4 + 1] = CG[i] / ca * darken; d[q4 + 2] = CB[i] / ca * darken;
+                    d[q4 + 3] = Math.max(0, Math.min(1, dens)) * 255;
+                }
+            }
+            fx.putImageData(fd, 0, 0);
+            const out = fxCanvas(cw, ch), ox = fx2d(out);
+            ox.imageSmoothingQuality = 'high';
+            ox.drawImage(fc, 0, 0, cw, ch);
+            ox.globalAlpha = Math.max(0, 0.6 - bleed * 0.7);   // a light bleed keeps some of the crisp letter
+            ox.drawImage(src, 0, 0);
+            ox.globalAlpha = 1;
+            if (rec.water.drips > 0) {
+                // runs of wet pigment, falling from the bottoms of the strokes
+                const amt = rec.water.drips / 100;
+                ox.setTransform(k, 0, 0, k, -x0 * k, -y0 * k);
+                for (const d of fxDripSources(src, C, amt, 0x7a7e)) {
+                    const w = ref * (0.018 + 0.03 * d.rng());
+                    fxDrip(ox, d.rng, d.x, d.y, ref * (0.25 + 1.5 * amt * d.rng()), w, fxInk(d.it), 1.5 + d.rng() * 0.7, 0.42);
+                }
+                ox.setTransform(1, 0, 0, 1, 0, 0);
+            }
+            return out;
+        }
+
+        // ---- Distortions & lenses ----
+        // Every output pixel looks up where its ink comes from (P[0], P[1], in page px).
+        function fxWarpMap(C) {
+            const wp = C.rec.warp, g = fxLensGeom(C.rec, C.items), a = wp.amount / 100, f = wp.freq / 100, sz = wp.size / 100;
+            const { cx, cy, R, B, Bw, Bh, big } = g, ca = Math.cos(g.angle), sa = Math.sin(g.angle), TAU = Math.PI * 2;
+            const same = (px, py, P) => { P[0] = px; P[1] = py; };
+            // radial lenses: rn → the radius (0–1) its ink comes from
+            const radial = (fn) => (px, py, P) => {
+                const dx = px - cx, dy = py - cy, r = Math.hypot(dx, dy);
+                if (r >= R || r < 1e-6) return same(px, py, P);
+                const s = fn(r / R) / (r / R);
+                P[0] = cx + dx * s; P[1] = cy + dy * s;
+            };
+            // rotate into (u along the angle, v across it) and back
+            const along = (fn) => (px, py, P) => {
+                const u = px * ca + py * sa, v = -px * sa + py * ca, o = fn(u, v);
+                P[0] = o[0] * ca - o[1] * sa; P[1] = o[0] * sa + o[1] * ca;
+            };
+            const uv = [0, 0];
+            switch (wp.type) {
+                case 'fisheye': {
+                    const kf = 1 + 7 * Math.abs(a), atk = Math.atan(kf);
+                    return radial(rn => a >= 0 ? Math.tan(rn * atk) / kf : Math.atan(rn * kf) / atk);
+                }
+                case 'bulge': {
+                    const e = Math.pow(2, 1.8 * a);
+                    return radial(rn => Math.pow(rn, e));
+                }
+                case 'twirl':
+                    return (px, py, P) => {
+                        const dx = px - cx, dy = py - cy, r = Math.hypot(dx, dy);
+                        if (r >= R) return same(px, py, P);
+                        const u = 1 - r / R, t = a * 2.6 * Math.PI * u * u, c = Math.cos(t), s = Math.sin(t);
+                        P[0] = cx + dx * c - dy * s; P[1] = cy + dx * s + dy * c;
+                    };
+                case 'ripple': {
+                    const lam = Math.max(4, R * (0.05 + 0.4 * (1 - f))), amp = a * lam * 0.4;
+                    return (px, py, P) => {
+                        const dx = px - cx, dy = py - cy, r = Math.hypot(dx, dy);
+                        if (r < 1e-6) return same(px, py, P);
+                        const sr = r + amp * Math.sin(TAU * r / lam) * Math.exp(-r / R);
+                        P[0] = cx + dx / r * sr; P[1] = cy + dy / r * sr;
+                    };
+                }
+                case 'underwater': {
+                    // refraction through a moving surface: crossed swells plus turbulence
+                    const lam = Math.max(6, big * (0.04 + 0.3 * sz)), amp = Math.abs(a) * lam * 0.2, tb = f * 1.6, T = getWearTiles(), sn = 6 / lam;
+                    return (px, py, P) => {
+                        const nx = tileSample(T.mid, px * sn, py * sn) - 0.5, ny = tileSample(T.mid, px * sn + 173, py * sn + 291) - 0.5;
+                        P[0] = px + amp * (Math.sin(TAU * (py * 0.8 + px * 0.3) / lam + 0.7) + 0.55 * Math.sin(TAU * 1.9 * (py * 0.35 - px * 0.6) / lam + 2.1) + tb * nx);
+                        P[1] = py + amp * (Math.sin(TAU * (px * 0.9 - py * 0.25) / lam + 1.3) + 0.5 * Math.sin(TAU * 2.3 * (px * 0.4 + py * 0.7) / lam + 0.4) + tb * ny);
+                    };
+                }
+                case 'waves': {
+                    const lam = Math.max(6, big * (0.03 + 0.5 * sz)), amp = a * lam * 0.3;
+                    return along((u, v) => { uv[0] = u; uv[1] = v + amp * Math.sin(TAU * u / lam); return uv; });
+                }
+                case 'arch': {
+                    const bend = a * Bh * 0.9;
+                    return (px, py, P) => {
+                        const t = Math.max(-1.3, Math.min(1.3, 2 * (px - B.x0) / Bw - 1));
+                        P[0] = px; P[1] = py + bend * (1 - t * t);
+                    };
+                }
+                case 'flag': {
+                    const amp = a * Bh * 0.35, folds = 0.5 + 3 * f;
+                    return (px, py, P) => { P[0] = px; P[1] = py + amp * Math.sin(TAU * folds * (px - B.x0) / Bw); };
+                }
+                case 'cylinder': {
+                    // a glass rod: magnifies across its axis inside the band, leaves the rest
+                    const e = Math.pow(2, 1.6 * a);
+                    return (px, py, P) => {
+                        const dx = px - cx, dy = py - cy, u = dx * ca + dy * sa, v = -dx * sa + dy * ca;
+                        if (Math.abs(u) >= R) return same(px, py, P);
+                        const su = Math.sign(u) * R * Math.pow(Math.abs(u) / R, e);
+                        P[0] = cx + su * ca - v * sa; P[1] = cy + su * sa + v * ca;
+                    };
+                }
+                case 'reeded': {
+                    // fluted glass: each reed shows its own squeezed (or flipped) slice, nudged sideways
+                    const wS = Math.max(3, Bw * (0.012 + 0.18 * (1 - f))), m = 1 - 1.1 * a;
+                    return along((u, v) => {
+                        const kk = Math.floor(u / wS), c = (kk + 0.5) * wS;
+                        uv[0] = c + (u - c) * m + a * wS * 0.7 * Math.sin(kk * 2.17 + 0.5); uv[1] = v;
+                        return uv;
+                    });
+                }
+                case 'lensgrid': {
+                    // a sheet of square glass blocks: each shows its own tile, magnified (or shrunk)
+                    // with a little barrel, so the letters break into an op-art mosaic
+                    const cs = Math.max(6, Bw * (0.02 + 0.22 * (1 - f))), h = cs / 2, m = 1 - 0.75 * a;
+                    return (px, py, P) => {
+                        const gx = (Math.floor(px / cs) + 0.5) * cs, gy = (Math.floor(py / cs) + 0.5) * cs, dx = px - gx, dy = py - gy;
+                        const s = m * (1 + 0.3 * a * (dx * dx + dy * dy) / (h * h));
+                        P[0] = gx + dx * s; P[1] = gy + dy * s;
+                    };
+                }
+                case 'xerox': {
+                    // the original dragged across the copier glass: bands slip and stretch unevenly
+                    // along the drag (fxSmear then drags the toner out behind them)
+                    const T = getWearTiles(), sn = fxXeroxNoise(Bh, f), A = Math.abs(a);
+                    const u0 = ((B.x0 + B.x1) / 2) * ca + ((B.y0 + B.y1) / 2) * sa;
+                    return (px, py, P) => {
+                        const u = px * ca + py * sa, v = -px * sa + py * ca, nv = tileSample(T.mid, v * sn, 37.5);
+                        const su = u0 + (u - u0 - a * Bw * 0.3 * (nv - 0.35)) / (1 + A * 1.4 * nv);
+                        P[0] = su * ca - v * sa; P[1] = su * sa + v * ca;
+                    };
+                }
+                case 'slices': {
+                    const hS = Math.max(3, Bh * (0.02 + 0.3 * (1 - f)));
+                    return along((u, v) => { uv[0] = u - a * Bw * 0.25 * (hash2(Math.floor(v / hS), 7, 31) * 2 - 1); uv[1] = v; return uv; });
+                }
+            }
+            return same;
+        }
+
+        // Bilinear read of non-premultiplied RGBA, weighting colour by alpha so edges don't darken
+        function fxBilerp(S, w, h, fx, fy, D, q) {
+            const xi = Math.floor(fx), yi = Math.floor(fy);
+            if (xi < -1 || yi < -1 || xi >= w || yi >= h) return;
+            const tx = fx - xi, ty = fy - yi;
+            let A = 0, R = 0, G = 0, B = 0;
+            for (let j = 0; j < 2; j++) {
+                const yy = yi + j;
+                if (yy < 0 || yy >= h) continue;
+                const wy = j ? ty : 1 - ty;
+                for (let i = 0; i < 2; i++) {
+                    const xx = xi + i;
+                    if (xx < 0 || xx >= w) continue;
+                    const p = (yy * w + xx) * 4, a = S[p + 3] * wy * (i ? tx : 1 - tx);
+                    if (!a) continue;
+                    A += a; R += S[p] * a; G += S[p + 1] * a; B += S[p + 2] * a;
+                }
+            }
+            if (A > 0) { D[q] = R / A; D[q + 1] = G / A; D[q + 2] = B / A; D[q + 3] = A; }
+        }
+        const fxXeroxNoise = (Bh, f) => 8 / Math.max(4, Bh * (0.04 + 0.4 * (1 - f)));
+        function fxWarp(src, C) {
+            const { cw, ch, k, x0, y0 } = C, S = fx2d(src).getImageData(0, 0, cw, ch).data;
+            const out = fxCanvas(cw, ch), ox = fx2d(out), dst = ox.createImageData(cw, ch), D = dst.data;
+            const map = fxWarpMap(C), P = new Float64Array(2);
+            for (let y = 0; y < ch; y++) {
+                const py = y0 + (y + 0.5) / k;
+                for (let x = 0; x < cw; x++) {
+                    map(x0 + (x + 0.5) / k, py, P);
+                    fxBilerp(S, cw, ch, (P[0] - x0) * k - 0.5, (P[1] - y0) * k - 0.5, D, (y * cw + x) * 4);
+                }
+            }
+            ox.putImageData(dst, 0, 0);
+            return C.rec.warp.type === 'xerox' ? fxSmear(out, C) : out;
+        }
+
+        // Munari's toner drag: turn the layer so the drag runs left to right, then carry the
+        // strongest toner along each row, fading as it goes. Rows that slipped further on the
+        // glass smear longer.
+        function fxSmear(src, C) {
+            const { cw, ch, k, x0, y0, ref, rec } = C, wp = rec.warp, a = wp.amount / 100, A = Math.abs(a);
+            if (A < 0.01) return src;
+            const th = wp.angle * Math.PI / 180 + (a < 0 ? Math.PI : 0), ca = Math.cos(th), sa = Math.sin(th);
+            const g = fxLensGeom(rec, C.items), sn = fxXeroxNoise(g.Bh, wp.freq / 100), T = getWearTiles();
+            const rw = Math.ceil(Math.abs(cw * ca) + Math.abs(ch * sa)) + 2, rh = Math.ceil(Math.abs(cw * sa) + Math.abs(ch * ca)) + 2;
+            const rot = fxCanvas(rw, rh), rx = fx2d(rot);
+            rx.translate(rw / 2, rh / 2);
+            rx.rotate(-th);
+            rx.drawImage(src, -cw / 2, -ch / 2);
+            const img = rx.getImageData(0, 0, rw, rh), d = img.data;
+            // page v (across the drag) of the turned canvas's middle row, as in the warp map
+            const mx = x0 + cw / 2 / k, my = y0 + ch / 2 / k, vMid = -mx * Math.sin(wp.angle * Math.PI / 180) + my * Math.cos(wp.angle * Math.PI / 180);
+            const flip = a < 0 ? -1 : 1;
+            for (let y = 0; y < rh; y++) {
+                const v = vMid + flip * (y - rh / 2) / k, nv = tileSample(T.mid, v * sn, 37.5);
+                const len = Math.max(1, A * ref * 1.6 * nv * k), decay = Math.exp(-1 / len);
+                let cr = 0, cg = 0, cb = 0, al = 0;
+                for (let x = 0, q = y * rw * 4; x < rw; x++, q += 4) {
+                    al *= decay;
+                    if (d[q + 3] >= al) { al = d[q + 3]; cr = d[q]; cg = d[q + 1]; cb = d[q + 2]; }
+                    else { d[q] = cr; d[q + 1] = cg; d[q + 2] = cb; d[q + 3] = al; }
+                }
+            }
+            rx.setTransform(1, 0, 0, 1, 0, 0);
+            rx.putImageData(img, 0, 0);
+            const out = fxCanvas(cw, ch), ox = fx2d(out);
+            ox.translate(cw / 2, ch / 2);
+            ox.rotate(th);
+            ox.drawImage(rot, -rw / 2, -rh / 2);
+            return out;
+        }
+
+        // ---- Impression relief: the set's shape pressed into (or raised from) the sheet ----
+        // The ink's blurred alpha is a height map; its slopes catch the light on one side and
+        // fall into shadow on the other. Raised letters also throw a soft shadow.
+        function fxBuildRelief(S, quality, layer) {
+            const rec = S.rec, d = rec.press.depth / 100, ad = Math.abs(d), W = state.canvasWidth, H = state.canvasHeight;
+            const ref = fxRefSize(S.items), bevel = ref * (0.006 + 0.03 * ad);   // the impression's wall: narrow and crisp
+            const B = layer ? { x0: layer.x, y0: layer.y, x1: layer.x + layer.w, y1: layer.y + layer.h } : selectionBounds(S.items), m = bevel * 4 + 6;
+            const x0 = Math.max(0, Math.floor(B.x0 - m)), y0 = Math.max(0, Math.floor(B.y0 - m));
+            const x1 = Math.min(W, Math.ceil(B.x1 + m)), y1 = Math.min(H, Math.ceil(B.y1 + m));
+            if (x1 <= x0 || y1 <= y0) return null;
+            const w = x1 - x0, h = y1 - y0, q = Math.min(1, Math.sqrt((quality === 'draft' ? 0.3e6 : 1.5e6) / (w * h)));
+            const fw = Math.max(1, Math.round(w * q)), fh = Math.max(1, Math.round(h * q)), n = fw * fh;
+            const ac = fxCanvas(fw, fh), ax = fx2d(ac);
+            ax.imageSmoothingQuality = 'high';
+            if (layer) ax.drawImage(layer.canvas, (layer.x - x0) * q, (layer.y - y0) * q, layer.w * q, layer.h * q);
+            else for (const it of S.items) drawItemInto(ax, it, createDegradedStampCanvas(it, rec.press.strength), x0, y0, q);
+            const src = ax.getImageData(0, 0, fw, fh).data, A = new Float32Array(n);
+            for (let i = 0; i < n; i++) A[i] = src[i * 4 + 3] / 255;
+            const rb = Math.max(1, Math.round(bevel * q)), Hh = boxBlur(A, fw, fh, rb, 2);
+            const phi = rec.press.light * Math.PI / 180, Lx = Math.cos(phi), Ly = -Math.sin(phi);
+            const sign = d > 0 ? -1 : 1, gain = rb * 2.4 * (0.6 + ad * 1.2);   // pressed in: the surface dips under the ink
+            const cast = d < 0 ? Math.round(bevel * q * 2.5) : 0;
+            const shadow = new ImageData(fw, fh), light = new ImageData(fw, fh), Sd = shadow.data, Ld = light.data;
+            for (let y = 0; y < fh; y++) {
+                for (let x = 0; x < fw; x++) {
+                    const i = y * fw + x;
+                    const gx = (Hh[i + (x < fw - 1 ? 1 : 0)] - Hh[i - (x > 0 ? 1 : 0)]) * 0.5;
+                    const gy = (Hh[i + (y < fh - 1 ? fw : 0)] - Hh[i - (y > 0 ? fw : 0)]) * 0.5;
+                    const shade = -sign * (gx * Lx + gy * Ly) * gain;
+                    let thrown = 0;
+                    if (cast) {
+                        const sx = Math.min(fw - 1, Math.max(0, x + Math.round(Lx * cast))), sy = Math.min(fh - 1, Math.max(0, y + Math.round(Ly * cast)));
+                        thrown = Math.max(0, Hh[sy * fw + sx] - Hh[i]) * 0.45 * ad;
+                    }
+                    const q4 = i * 4, dark = Math.min(0.85, Math.max(0, -shade) * 0.75 + thrown), lit = Math.min(0.75, Math.max(0, shade) * 0.6);
+                    if (dark > 0.004) { Sd[q4] = 46; Sd[q4 + 1] = 38; Sd[q4 + 2] = 30; Sd[q4 + 3] = dark * 255; }
+                    if (lit > 0.004) { Ld[q4] = Ld[q4 + 1] = Ld[q4 + 2] = 255; Ld[q4 + 3] = lit * 255; }
+                }
+            }
+            const sc = fxCanvas(fw, fh), lc = fxCanvas(fw, fh);
+            sc.getContext('2d').putImageData(shadow, 0, 0);
+            lc.getContext('2d').putImageData(light, 0, 0);
+            return { shadow: sc, light: lc, x: x0, y: y0, w, h };
+        }
 
         // ------------------------------------------------------------------
         // GRID SYSTEMS: baseline · Swiss modular (Müller-Brockmann) · proportional (Bosshard)
@@ -2621,12 +3511,17 @@
             gridPanel.style.display = open ? 'flex' : 'none';
             document.getElementById('stamps-panel-body').style.display = panelTab === 'stamps' ? '' : 'none';
             document.getElementById('grid-panel-body').style.display = panelTab === 'grid' ? '' : 'none';
+            document.getElementById('fx-panel-body').style.display = panelTab === 'fx' ? '' : 'none';
+            document.getElementById('btn-fx-panel').classList.toggle('is-on', open && panelTab === 'fx');
             document.querySelectorAll('.panel-tab').forEach(b => b.classList.toggle('is-on', b.dataset.panel === panelTab));
             document.getElementById('btn-grid-panel').classList.toggle('is-on', open && panelTab === 'grid');
             document.getElementById('btn-stamps-panel').classList.toggle('is-on', open && panelTab === 'stamps');
+            syncFxPanel(true);
+            drawDesignOverlay();   // lens handles show only with the Effects tab open
         }
         document.getElementById('btn-grid-panel').addEventListener('click', () => setGridPanel(!(panelOpen() && panelTab === 'grid'), 'grid'));
         document.getElementById('btn-stamps-panel').addEventListener('click', () => setGridPanel(!(panelOpen() && panelTab === 'stamps'), 'stamps'));
+        document.getElementById('btn-fx-panel').addEventListener('click', () => setGridPanel(!(panelOpen() && panelTab === 'fx'), 'fx'));
         document.getElementById('btn-close-grid-panel').addEventListener('click', () => setGridPanel(false));
         document.getElementById('panel-tabs').addEventListener('click', (e) => {
             const b = e.target.closest('[data-panel]');
@@ -2774,6 +3669,7 @@
                 }
                 c.restore();
             }
+            drawFxOverlay(c, vp);
             if (marquee) {
                 const a = vp.toScreen(marquee.a.x, marquee.a.y), b = vp.toScreen(marquee.b.x, marquee.b.y);
                 c.save();
@@ -2786,6 +3682,7 @@
                 c.restore();
             }
             syncItemInspector();
+            syncFxPanel();
         }
 
         // ------------------------------------------------------------------
@@ -2823,18 +3720,28 @@
                 placeStamp(st, at.x, at.y, state.stampScale);
                 renderDesignCanvas();
             } else if (state.activeTool === 'select') {
+                // the Effects panel's lens: drag its centre or its ring
+                const lens = fxLensHit(e);
+                if (lens) { beginLensDrag(lens); return; }
                 // a corner handle scales the whole selection from the opposite corner
                 if (state.selection.length) {
                     const k = cornerHit(e);
                     if (k >= 0) { beginScaleDrag(k, pos); return; }
                 }
-                const hit = [...state.placedItems].reverse().find(it => hitItem(it, pos, 4 / designVP.scale));
+                let hit = [...state.placedItems].reverse().find(it => hitItem(it, pos, 4 / designVP.scale)), group = null;
+                if (!hit) {
+                    // distorted or melted ink can sit well away from its stamps: clicking it takes its group
+                    group = fxInkHit(pos);
+                    hit = group && group[0];
+                }
                 if (hit && e.shiftKey) {
-                    // Shift-click adds or removes one stamp
-                    state.selection = isSelected(hit) ? state.selection.filter(x => x !== hit) : [...state.selection, hit];
+                    // Shift-click adds or removes one stamp (or that group)
+                    const these = group || [hit];
+                    state.selection = isSelected(hit) ? state.selection.filter(x => !these.includes(x)) : [...new Set([...state.selection, ...these])];
                 } else if (hit) {
-                    if (!isSelected(hit)) state.selection = [hit];
+                    if (!isSelected(hit)) state.selection = group || [hit];
                     beginMoveDrag(hit, pos);
+                    moveDrag.whole = !!group;
                 } else {
                     // empty paper: drag out a selection box (Shift adds to the selection)
                     marquee = { a: pos, b: pos, add: e.shiftKey, base: [...state.selection] };
@@ -3138,7 +4045,8 @@
             return {
                 items: state.placedItems.map(it => ({ ...it })),
                 sel: state.selection.map(it => state.placedItems.indexOf(it)).filter(i => i >= 0),
-                caret: typeCaret ? { ...typeCaret } : null
+                caret: typeCaret ? { ...typeCaret } : null,
+                fx: fxClone(state.fx)
             };
         }
 
@@ -3158,6 +4066,7 @@
         }
         function restoreItems(snap) {
             state.placedItems = snap.items.map(o => ({ ...o }));
+            if (snap.fx) state.fx = fxClone(snap.fx);
             state.selection = snap.sel.map(i => state.placedItems[i]).filter(Boolean);
             typeCaret = state.activeTool === 'type' && snap.caret ? { ...snap.caret } : null;
             typeRun = [];
@@ -3197,20 +4106,34 @@
         const rotateEdit = undoSession(document.getElementById('item-rotate'), ['blur']);
         const colorEdit = undoSession(document.getElementById('item-color'), ['change', 'blur']);
 
-        // Copies keep size, rotation, ink, blend and wear. Pasting on the same page steps
-        // down-right each time; on another page the first paste lands in place.
-        let clipboard = null;   // { items, pageId, pastes }
+        // Copies keep size, rotation, ink, blend, wear and effects (in a group of their own, so
+        // the original group's lens doesn't shift). Pasting on the same page steps down-right
+        // each time; on another page the first paste lands in place.
+        let clipboard = null;   // { items, pageId, pastes, fx }
         const pasteStep = () => Math.max(8, Math.round(state.canvasWidth / 160));
         function copySelection(cut = false) {
             if (!state.selection.length) return false;
             const items = state.placedItems.filter(isSelected).map(it => ({ ...it }));   // stacking order
-            clipboard = { items, pageId: currentPage() ? currentPage().id : null, pastes: 0 };
+            const fx = Object.fromEntries(items.filter(o => o.fxSet && state.fx.sets[o.fxSet]).map(o => [o.fxSet, fxClone(state.fx.sets[o.fxSet])]));
+            clipboard = { items, pageId: currentPage() ? currentPage().id : null, pastes: 0, fx };
             if (cut) deleteSelection();
             toast(`${cut ? 'Cut' : 'Copied'} ${items.length} stamp${items.length > 1 ? 's' : ''}. ⌘/Ctrl+V pastes here or on another page.`);
             return true;
         }
-        function addCopies(source, offset) {
-            const copies = source.map(o => ({ ...o, x: o.x + offset, y: o.y + offset }));
+        function addCopies(source, offset, recs = state.fx.sets) {
+            const groups = new Map();
+            const copies = source.map(o => {
+                let fxSet = null;
+                if (o.fxSet && recs[o.fxSet]) {
+                    if (!groups.has(o.fxSet)) {
+                        const id = newId('fx');
+                        state.fx.sets[id] = fxClone(recs[o.fxSet]);
+                        groups.set(o.fxSet, id);
+                    }
+                    fxSet = groups.get(o.fxSet);
+                }
+                return { ...o, fxSet, x: o.x + offset, y: o.y + offset };
+            });
             state.placedItems.push(...copies);
             if (state.activeTool !== 'select') document.querySelector('.tool-btn[data-tool="select"]').click();
             state.selection = copies;
@@ -3222,7 +4145,7 @@
             pushUndo();
             const samePage = currentPage() && clipboard.pageId === currentPage().id;
             const k = samePage ? ++clipboard.pastes : clipboard.pastes++;
-            addCopies(clipboard.items, k * pasteStep());
+            addCopies(clipboard.items, k * pasteStep(), clipboard.fx);
         }
         function duplicateSelection() {
             if (!state.selection.length) return;
@@ -3256,16 +4179,18 @@
                 const st = activeStamp();
                 if (state.activeTool === 'stamp' && st && onBoard(pos)) designHover = snapPlacement(st, pos.x, pos.y, e.altKey, state.stampScale);
                 else { designHover = null; snapGuides = null; }
-                // Select tool: resize cursor over the selection's corner handles
+                // Select tool: resize cursor over the selection's corner handles; move or resize over a lens
                 if (state.activeTool === 'select') {
-                    const k = cornerHit(e);
-                    designViewportEl.style.cursor = k < 0 ? 'default' : (k % 2 ? 'nesw-resize' : 'nwse-resize');
+                    const k = cornerHit(e), lens = fxLensHit(e);
+                    designViewportEl.style.cursor = lens ? (lens.mode === 'move' ? 'move' : 'ew-resize') : k < 0 ? 'default' : (k % 2 ? 'nesw-resize' : 'nwse-resize');
                 }
                 drawDesignOverlay();
                 return;
             }
             if (scaleDrag) {
                 moveScaleDrag(pos, e);
+            } else if (lensDrag) {
+                moveLensDrag(pos);
             } else if (moveDrag) {
                 moveMoveDrag(pos, e);
             } else if (marquee) {
@@ -3276,13 +4201,15 @@
         const endDesignPointer = () => {
             if (designVP.endPan()) return;
             // a click (no drag) on one stamp of a group narrows the selection to it
-            if (moveDrag && !moveDrag.moved && state.selection.length > 1) state.selection = [moveDrag.lead];
+            if (moveDrag && !moveDrag.moved && !moveDrag.whole && state.selection.length > 1) state.selection = [moveDrag.lead];
             state.isInteracting = false;
             scaleDrag = null;
             moveDrag = null;
+            lensDrag = null;
             marquee = null;
             snapGuides = null;
-            drawDesignOverlay();
+            if (fxDraftShown) renderDesignCanvas();   // swap the drag's draft effects for sharp ones
+            else drawDesignOverlay();
         };
         designViewportEl.addEventListener('pointerup', endDesignPointer);
         designViewportEl.addEventListener('pointercancel', endDesignPointer);
@@ -3395,6 +4322,7 @@
 
             const key = e.key.toLowerCase();
             if (key === 'g') { grid.show = !grid.show; onGridChange(); return; }
+            if (key === 'e' && !e.altKey) { setGridPanel(!(panelOpen() && panelTab === 'fx'), 'fx'); return; }
             if (TOOL_KEYS[key] && !e.altKey) {
                 document.querySelector(`.tool-btn[data-tool="${TOOL_KEYS[key]}"]`).click();
                 return;
@@ -3532,6 +4460,7 @@
         // High-Res PNG Export
         // Flatten exactly what's on screen: artwork, the frosted Mylar sheet, then the grid if asked
         function flattenForExport() {
+            if (fxDraftShown) { fxForceSharp = true; renderDesignCanvas(); fxForceSharp = false; }   // never export a draft
             const W = state.canvasWidth, H = state.canvasHeight;
             const out = document.createElement('canvas');
             out.width = W;
@@ -3565,15 +4494,31 @@
                 svg += `  <rect width="100%" height="100%" fill="${PAPER_COLORS[state.paperPreset] || PAPER_COLORS.newsprint}"/>\n`;
             }
 
-            // as on the canvas: stacking order kept, each stamp blending with what's beneath it
+            // as on the canvas: stacking order kept, each stamp blending with what's beneath it;
+            // effect layers and relief are raster images in the same places
             svg += `  <g id="stamps">\n`;
+            const sets = fxCollect(), layered = new Set();
+            const rasterSVG = (c, x, y, w2, h2, mode) =>
+                `  <image x="${x}" y="${y}" width="${w2}" height="${h2}" preserveAspectRatio="none" href="${c.toDataURL()}"${mode === 'source-over' ? '' : ` style="mix-blend-mode:${cssBlend(mode)}"`}/>\n`;
             state.placedItems.forEach(item => {
-                const deg = createDegradedStampCanvas(item), dataUrl = deg.toDataURL(), mode = itemBlend(item);
+                const S = sets.get(fxSetId(item));
+                if (fxNeedsLayer(S.rec)) {
+                    if (layered.has(S)) return;
+                    layered.add(S);
+                    const L = fxRender(S, 'final').layer;
+                    if (L) svg += rasterSVG(L.canvas, L.x, L.y, L.w, L.h, L.op);
+                    return;
+                }
+                const deg = createDegradedStampCanvas(item, S.rec.press.strength), dataUrl = deg.toDataURL(), mode = itemBlend(item);
                 const blend = mode === 'source-over' ? '' : ` style="mix-blend-mode:${cssBlend(mode)}"`;
                 svg += `  <g transform="translate(${item.x}, ${item.y}) rotate(${(item.rotation * 180 / Math.PI).toFixed(2)}) scale(${+itemScale(item).toFixed(4)})"${blend}>\n`;
                 svg += `    <image x="${-deg.width / 2}" y="${-deg.height / 2}" width="${deg.width}" height="${deg.height}" href="${dataUrl}"/>\n`;
                 svg += `  </g>\n`;
             });
+            for (const S of sets.values()) {
+                const R = S.rec.press.depth ? fxRender(S, 'final').relief : null;
+                if (R) svg += rasterSVG(R.shadow, R.x, R.y, R.w, R.h, 'multiply') + rasterSVG(R.light, R.x, R.y, R.w, R.h, 'source-over');
+            }
             svg += `  </g>\n  </g>\n`;
 
             svg += mylarToSVG(w, h);
@@ -3927,10 +4872,332 @@
         }
 
         // ------------------------------------------------------------------
+        // EFFECTS PANEL & LENS HANDLES
+        // ------------------------------------------------------------------
+        // Edits go to the selected effect group, or to the page's own effects when nothing is
+        // selected. Selecting stamps that aren't one group and changing anything makes them a
+        // new group, starting from how they look now.
+        const fxPanel = document.getElementById('fx-panel-body');
+        const pct = (v) => `${v}%`;
+        const FX_PRESETS = [
+            ['Ink wash', { water: { on: true, bleed: 55, bloom: 65, grain: 45 } }, 'Watercolour: the ink bleeds into wet paper with tide lines'],
+            ['Flood', { water: { on: true, bleed: 100, bloom: 80, grain: 30, drips: 35 } }, 'Watercolour at full bleed: ink everywhere'],
+            ['Running ink', { water: { on: true, bleed: 40, bloom: 60, grain: 40, drips: 80 } }, 'Wet ink running down the sheet'],
+            ['Hot glue', { goo: { on: true, melt: 60, reach: 45, strings: 60, gloss: 75 } }, 'Glossy melted plastic with strings between letters'],
+            ['Melting', { goo: { on: true, melt: 75, reach: 40, strings: 35, gloss: 80, drips: 80 } }, 'Plastic letters melting into beaded drips'],
+            ['Spider silk', { goo: { on: true, melt: 15, reach: 70, strings: 100, gloss: 40 } }, 'Fine webs of plastic thread between nearby letters'],
+            ['Underwater', { warp: { type: 'underwater', amount: 55, size: 40, freq: 55 } }, 'Seen through moving water'],
+            ['Fisheye', { warp: { type: 'fisheye', amount: 70, size: 60, cx: 0.5, cy: 0.5 } }, 'A round lens over the middle; drag it with the Select tool'],
+            ['Schrofer reeds', { warp: { type: 'reeded', amount: 55, freq: 65, angle: 0 } }, 'Op-art lettering seen through reeded glass'],
+            ['Lens grid', { warp: { type: 'lensgrid', amount: 65, freq: 55 } }, 'A sheet of small lenses'],
+            ['Munari xerox', { warp: { type: 'xerox', amount: 60, freq: 45, angle: 0 } }, 'The original dragged across the copier glass'],
+            ['Letterpress', { press: { strength: 85, depth: 55 } }, 'Heavy pressure, letters bitten into the sheet'],
+            ['Blind emboss', { press: { depth: -70 } }, 'Letters raised off the sheet'],
+            ['Kiss', { press: { strength: 15, depth: 12 } }, 'A light rub: starved, broken ink']
+        ];
+        const FX_UI = [
+            { title: 'Impression', note: 'How hard each letter was rubbed down, and how far the sheet took the pressure.', rows: [
+                { key: 'press.strength', label: 'Pressure', fmt: v => v < 40 ? `${v} · light kiss` : v > 60 ? `${v} · heavy` : `${v}`, tip: 'Light pressure leaves starved, broken ink; heavy pressure squashes ink out into a darker rim.' },
+                { key: 'press.depth', label: 'Deboss ↔ extrude', min: -100, max: 100, fmt: v => v > 0 ? `pressed in ${v}` : v < 0 ? `raised ${-v}` : 'flat', tip: 'Right presses the letters into the paper; left raises them off it.' },
+                { key: 'press.light', label: 'Light from', max: 360, step: 5, fmt: v => `${v}°`, show: r => r.press.depth !== 0 }
+            ] },
+            { title: 'Watercolour', toggle: 'water.on', note: 'Ink bleeds out through wet paper.', rows: [
+                { key: 'water.bleed', label: 'Bleed', fmt: pct },
+                { key: 'water.bloom', label: 'Tide lines & blooms', fmt: pct },
+                { key: 'water.grain', label: 'Granulation', fmt: pct },
+                { key: 'water.drips', label: 'Drips', fmt: pct, tip: 'Wet ink runs down the page from the bottoms of the letters.' }
+            ] },
+            { title: 'Plastic goo', toggle: 'goo.on', note: 'Letters melt into their neighbours and pull sagging strings, like hot glue or spun plastic.', rows: [
+                { key: 'goo.melt', label: 'Melt', fmt: pct },
+                { key: 'goo.reach', label: 'Reach', fmt: pct, tip: 'How close letters must be to fuse and string together.' },
+                { key: 'goo.strings', label: 'Strings & web', fmt: pct },
+                { key: 'goo.gloss', label: 'Gloss & extrusion', fmt: pct },
+                { key: 'goo.drips', label: 'Drips', fmt: pct, tip: 'Molten plastic sags off the letters in beaded drips.' }
+            ] },
+            { title: 'Distort & lenses', warp: true, note: 'Bends the set as one piece: lenses, water, Schrofer-style reeded glass and lens grids, Munari-style xerox drags.', rows: [
+                { key: 'warp.amount', param: 'amount', min: -100, max: 100, fmt: v => `${v}` },
+                { key: 'warp.size', param: 'size', fmt: pct },
+                { key: 'warp.freq', param: 'freq', fmt: pct },
+                { key: 'warp.angle', param: 'angle', min: -180, max: 180, fmt: v => `${v}°` }
+            ] }
+        ];
+        function fxMerge(rec, patch) {
+            for (const k of Object.keys(patch)) Object.assign(rec[k], patch[k]);
+        }
+
+        // Who the panel edits: { kind: 'page' | 'set' | 'new', id, rec, items, sel }
+        function fxTarget() {
+            const sel = state.activeTool === 'select' ? state.selection.filter(it => state.placedItems.includes(it)) : [];
+            if (!sel.length) return { kind: 'page', id: 'page', rec: state.fx.page, items: state.placedItems.filter(it => fxSetId(it) === 'page'), sel };
+            const ids = new Set(sel.map(fxSetId));
+            if (ids.size === 1 && !ids.has('page')) {
+                const id = fxSetId(sel[0]);
+                return { kind: 'set', id, rec: state.fx.sets[id], items: state.placedItems.filter(it => fxSetId(it) === id), sel };
+            }
+            return { kind: 'new', id: null, rec: fxRecOf(fxSetId(sel[0])), items: sel, sel };
+        }
+        function fxEnsureTarget(T) {
+            if (T.kind !== 'new') return T.rec;
+            const id = newId('fx'), rec = fxClone(T.rec);
+            state.fx.sets[id] = rec;
+            T.items.forEach(it => { it.fxSet = id; });
+            return rec;
+        }
+
+        // A slider drag is one undo step; buttons and toggles are one each
+        let fxGesture = false;
+        function fxEdit(mutate, sliding = false) {
+            if (!fxGesture) { pushUndo(); fxGesture = sliding; }
+            mutate(fxEnsureTarget(fxTarget()));
+            fxSliding = sliding;
+            renderDesignCanvas();
+            syncFxPanel(true);
+        }
+        function fxEditEnd() {
+            fxGesture = false;
+            if (fxSliding) { fxSliding = false; renderDesignCanvas(); }
+        }
+        const fxClick = (mutate) => { fxEdit(mutate); fxEditEnd(); };
+
+        let fxUI = null, fxPanelSig = '';
+        function buildFxPanel() {
+            fxPanel.innerHTML = '';
+            const syncs = [];
+            const head = el('div', 'g-section');
+            const target = el('div', 'g-info'), acts = el('div', 'flex flex-wrap gap-1 mt-2'), groups = el('div', 'flex flex-wrap gap-1 mt-2');
+            head.append(el('div', 'g-title', 'Applies to'), target, acts, groups);
+            fxPanel.append(head);
+
+            const looks = el('div', 'g-section'), chips = el('div', 'flex flex-wrap gap-1');
+            for (const [name, patch, tip] of FX_PRESETS) {
+                const b = el('button', 'lib-btn', name);
+                b.title = tip;
+                b.addEventListener('click', () => fxClick(rec => fxMerge(rec, patch)));
+                chips.append(b);
+            }
+            looks.append(el('div', 'g-title', 'Quick looks'), chips);
+            fxPanel.append(looks);
+
+            for (const sec of FX_UI) {
+                const box = el('div', 'g-section'), title = el('div', 'g-title flex items-center justify-between');
+                title.append(el('span', '', sec.title));
+                if (sec.toggle) {
+                    const lab = el('label', 'fx-toggle'), cb = el('input');
+                    cb.type = 'checkbox';
+                    cb.addEventListener('change', () => fxClick(rec => fxPut(rec, sec.toggle, cb.checked)));
+                    lab.append(cb, document.createTextNode('On'));
+                    title.append(lab);
+                    syncs.push(rec => { cb.checked = fxGet(rec, sec.toggle); });
+                }
+                box.append(title, el('p', 'fx-note', sec.note));
+                if (sec.warp) {
+                    const grid = el('div', 'fx-warps');
+                    for (const W of FX_WARPS) {
+                        const b = el('button', '', W.label);
+                        b.addEventListener('click', () => fxClick(rec => { rec.warp.type = W.id; }));
+                        grid.append(b);
+                        syncs.push(rec => b.classList.toggle('is-on', rec.warp.type === W.id));
+                    }
+                    box.append(grid);
+                }
+                for (const row of sec.rows) {
+                    const wrap = el('div', 'fx-slider'), top = el('div', 'fx-head'), lab = el('span', '', row.label || ''), val = el('span');
+                    const inp = el('input');
+                    inp.type = 'range';
+                    inp.min = row.min ?? 0;
+                    inp.max = row.max ?? 100;
+                    inp.step = row.step || 1;
+                    inp.className = 'w-full';
+                    inp.title = `${row.tip ? row.tip + ' ' : ''}Double-click to reset.`;
+                    inp.addEventListener('input', () => fxEdit(rec => fxPut(rec, row.key, +inp.value), true));
+                    inp.addEventListener('change', fxEditEnd);
+                    inp.addEventListener('dblclick', () => fxClick(rec => fxPut(rec, row.key, fxGet(fxDefaults(), row.key))));
+                    top.append(lab, val);
+                    wrap.append(top, inp);
+                    box.append(wrap);
+                    syncs.push(rec => {
+                        const label = sec.warp ? FX_WARP[rec.warp.type][row.param] : row.label;
+                        const show = !!label && (!sec.toggle || fxGet(rec, sec.toggle)) && (!row.show || row.show(rec));
+                        wrap.style.display = show ? '' : 'none';
+                        if (!show) return;
+                        const v = fxGet(rec, row.key);
+                        lab.textContent = label;
+                        inp.value = v;
+                        val.textContent = row.fmt ? row.fmt(Math.round(v)) : v;
+                    });
+                }
+                if (sec.warp) {
+                    const hint = el('p', 'fx-note');
+                    syncs.push(rec => {
+                        hint.textContent = FX_WARP[rec.warp.type].lens ? 'With the Select tool, drag the lens centre on the page; drag its ring or handle to resize.' : '';
+                        hint.style.display = hint.textContent ? '' : 'none';
+                    });
+                    box.append(hint);
+                }
+                fxPanel.append(box);
+            }
+
+            const foot = el('div', 'g-section'), reset = el('button', 'lib-btn', 'Reset effects');
+            reset.title = 'Back to plain stamps for whatever this panel applies to';
+            reset.addEventListener('click', () => fxClick(rec => Object.assign(rec, fxDefaults())));
+            foot.append(reset, el('p', 'fx-note mt-2', 'An effect group lands on the page as one layer, so its stamps share one blend mode.'));
+            fxPanel.append(foot);
+            fxUI = { target, acts, groups, syncs };
+            syncFxPanel(true);
+        }
+
+        function syncFxPanel(force = false) {
+            if (!fxUI || !panelOpen() || panelTab !== 'fx') return;
+            const T = fxTarget(), ids = Object.keys(state.fx.sets);
+            const sig = `${T.kind}|${T.id}|${T.items.length}|${T.sel.length}|${state.activeTool}|${ids.join(',')}|${JSON.stringify(T.rec)}`;
+            if (!force && sig === fxPanelSig) return;
+            fxPanelSig = sig;
+            const n = T.items.length, count = (k) => `${k} stamp${k === 1 ? '' : 's'}`;
+            if (T.kind === 'page') fxUI.target.textContent = `The page: ${count(n)} not in an effect group, and every new stamp. ${state.activeTool === 'select' ? 'Select' : 'Use the Select tool (V) to pick'} stamps to give them effects of their own.`;
+            else if (T.kind === 'set') fxUI.target.textContent = `Effect group ${ids.indexOf(T.id) + 1}: ${count(n)}${T.sel.length < n ? `, ${T.sel.length} selected` : ''}. They bleed, melt and bend together.`;
+            else fxUI.target.textContent = `${count(n)} selected. Your first change makes them an effect group, starting from how they look now.`;
+
+            fxUI.acts.innerHTML = '';
+            const act = (label, tip, fn) => { const b = el('button', 'lib-btn', label); b.title = tip; b.addEventListener('click', fn); fxUI.acts.append(b); };
+            if (T.kind === 'new') act('Make effect group', 'Group the selected stamps so effects treat them as one piece', () => fxClick(() => {}));
+            if (T.kind === 'set' && T.sel.length < n) {
+                act('Select whole group', 'Select every stamp in this effect group', () => { state.selection = [...T.items]; drawDesignOverlay(); });
+                act('Split off', 'Give the selected stamps a group of their own, with the same effects', () => {
+                    pushUndo();
+                    const id = newId('fx');
+                    state.fx.sets[id] = fxClone(T.rec);
+                    T.sel.forEach(it => { it.fxSet = id; });
+                    renderDesignCanvas();
+                });
+            }
+            if (T.kind === 'set') {
+                act('Ungroup', 'Return these stamps to the page’s own effects', () => {
+                    pushUndo();
+                    T.items.forEach(it => { it.fxSet = null; });
+                    delete state.fx.sets[T.id];
+                    renderDesignCanvas();
+                });
+            }
+            fxUI.acts.style.display = fxUI.acts.childElementCount ? '' : 'none';
+
+            // the page's groups, one click to select each
+            fxUI.groups.innerHTML = '';
+            ids.forEach((id, i) => {
+                const items = state.placedItems.filter(it => it.fxSet === id);
+                const b = el('button', `lib-btn${T.id === id ? ' primary' : ''}`, `Group ${i + 1} · ${items.length}`);
+                b.title = 'Select this effect group';
+                b.addEventListener('click', () => {
+                    if (state.activeTool !== 'select') document.querySelector('.tool-btn[data-tool="select"]').click();
+                    state.selection = items;
+                    drawDesignOverlay();
+                });
+                fxUI.groups.append(b);
+            });
+            fxUI.groups.style.display = ids.length ? '' : 'none';
+            for (const f of fxUI.syncs) f(T.rec);
+        }
+
+        // The effect layer with ink under page point pos, topmost first: its group's stamps (for
+        // the page's own effects, just the nearest stamp), or null
+        function fxInkHit(pos) {
+            const page = currentPage(), sets = [...fxCollect().values()].filter(S => fxNeedsLayer(S.rec)).reverse();
+            for (const S of sets) {
+                const slot = fxCache.get(`${page ? page.id : ''}|${S.id}`);
+                const q = slot && ['final', 'draft'].find(k => slot[k] && slot[k].key === fxSetKey(S, k));
+                const L = q && slot[q].out.layer;
+                if (!L || pos.x < L.x || pos.y < L.y || pos.x >= L.x + L.w || pos.y >= L.y + L.h) continue;
+                const px = Math.floor((pos.x - L.x) * L.canvas.width / L.w), py = Math.floor((pos.y - L.y) * L.canvas.height / L.h);
+                if (L.canvas.getContext('2d').getImageData(px, py, 1, 1).data[3] < 60) continue;
+                if (S.id !== 'page') return S.items;
+                const d = (it) => Math.hypot(it.x - pos.x, it.y - pos.y);
+                return [S.items.reduce((a, b) => d(b) < d(a) ? b : a)];
+            }
+            return null;
+        }
+
+        // ---- Lens handles on the stage (Select tool, Effects panel open) ----
+        const fxLensVisible = () => state.activeTool === 'select' && panelOpen() && panelTab === 'fx';
+        function fxLensTarget() {
+            if (!fxLensVisible()) return null;
+            const T = fxTarget();
+            return T.kind === 'new' || !T.items.length ? null : T;
+        }
+        function drawFxOverlay(c, vp) {
+            const T = fxLensTarget();
+            if (!T) return;
+            const g = fxLensGeom(T.rec, T.items);
+            c.save();
+            if (T.kind === 'set') {   // the group's extent
+                const a = vp.toScreen(g.B.x0, g.B.y0), b = vp.toScreen(g.B.x1, g.B.y1);
+                c.strokeStyle = 'rgba(167, 139, 250, 0.85)';
+                c.lineWidth = 1;
+                c.setLineDash([2, 4]);
+                c.strokeRect(a.x - 8, a.y - 8, b.x - a.x + 16, b.y - a.y + 16);
+                c.setLineDash([]);
+            }
+            if (FX_WARP[T.rec.warp.type].lens) {
+                const o = vp.toScreen(g.cx, g.cy), R = g.R * vp.scale, ux = Math.cos(g.angle), uy = Math.sin(g.angle);
+                c.strokeStyle = '#a78bfa';
+                c.lineWidth = 1.5;
+                c.beginPath();
+                if (T.rec.warp.type === 'cylinder') {
+                    const L = g.big * vp.scale;   // the band's edges run along the rod
+                    for (const s of [-1, 1]) {
+                        c.moveTo(o.x + ux * R * s - uy * L, o.y + uy * R * s + ux * L);
+                        c.lineTo(o.x + ux * R * s + uy * L, o.y + uy * R * s - ux * L);
+                    }
+                } else {
+                    c.arc(o.x, o.y, R, 0, Math.PI * 2);
+                }
+                c.stroke();
+                c.fillStyle = '#18181b';
+                c.beginPath();
+                c.arc(o.x, o.y, 6, 0, Math.PI * 2);
+                c.fill();
+                c.stroke();
+                c.fillRect(o.x + ux * R - 4.5, o.y + uy * R - 4.5, 9, 9);
+                c.strokeRect(o.x + ux * R - 4.5, o.y + uy * R - 4.5, 9, 9);
+            }
+            c.restore();
+        }
+        // 'move' on the centre, 'size' on the ring or its handle
+        function fxLensHit(e) {
+            const T = fxLensTarget();
+            if (!T || !FX_WARP[T.rec.warp.type].lens) return null;
+            const g = fxLensGeom(T.rec, T.items), p = designVP.local(e), o = designVP.toScreen(g.cx, g.cy), R = g.R * designVP.scale;
+            const ux = Math.cos(g.angle), uy = Math.sin(g.angle);
+            let mode = null;
+            if (Math.hypot(p.x - o.x - ux * R, p.y - o.y - uy * R) <= 8) mode = 'size';
+            else if (Math.hypot(p.x - o.x, p.y - o.y) <= 9) mode = 'move';
+            else {
+                const ring = T.rec.warp.type === 'cylinder' ? Math.abs((p.x - o.x) * ux + (p.y - o.y) * uy) : Math.hypot(p.x - o.x, p.y - o.y);
+                if (Math.abs(ring - R) <= 6) mode = 'size';
+            }
+            return mode && { mode, rec: T.rec, g };
+        }
+        let lensDrag = null;
+        function beginLensDrag(hit) {
+            lensDrag = { ...hit, undo: captureItems() };
+        }
+        function moveLensDrag(pos) {
+            const L = lensDrag, w = L.rec.warp, g = L.g;
+            if (L.undo) { pushUndo(L.undo); L.undo = null; }   // recorded once the drag really starts
+            if (L.mode === 'move') {
+                w.cx = (pos.x - g.B.x0) / g.Bw;
+                w.cy = (pos.y - g.B.y0) / g.Bh;
+            } else {
+                const cx = g.B.x0 + w.cx * g.Bw, cy = g.B.y0 + w.cy * g.Bh;
+                const R = w.type === 'cylinder' ? Math.abs((pos.x - cx) * Math.cos(g.angle) + (pos.y - cy) * Math.sin(g.angle)) : Math.hypot(pos.x - cx, pos.y - cy);
+                w.size = +Math.max(0, Math.min(100, (R / (g.big / 2) - 0.08) / 1.92 * 100)).toFixed(1);
+            }
+            renderDesignCanvas();
+        }
+
+        // ------------------------------------------------------------------
         // PROJECTS & PAGES
         // ------------------------------------------------------------------
         // A project is a list of pages. Each page keeps its own size, paper, wear and
-        // Mylar settings, grid and placed stamps. The page on the stage is "live";
+        // Mylar settings, grid, effects and placed stamps. The page on the stage is "live";
         // capturePage() copies it back into the project before switching or saving.
         const SETTING_SLIDERS = [
             ['angleJitter', 'param-jitter', v => `${(+v).toFixed(1)}°`],
@@ -3965,7 +5232,7 @@
         }
 
         function newPage(name, w = state.canvasWidth, h = state.canvasHeight) {
-            return { id: newId('page'), name, width: w, height: h, items: [], settings: currentSettings(), grid: snapshotGrid() };
+            return { id: newId('page'), name, width: w, height: h, items: [], settings: currentSettings(), grid: snapshotGrid(), fx: fxEmpty() };
         }
         const currentPage = () => state.project && state.project.pages.find(p => p.id === state.project.activePageId);
 
@@ -3974,6 +5241,7 @@
             page.width = state.canvasWidth;
             page.height = state.canvasHeight;
             page.items = state.placedItems;
+            page.fx = state.fx;
             page.settings = currentSettings();
             page.grid = snapshotGrid();
         }
@@ -3981,6 +5249,7 @@
         function loadPage(page) {
             state.project.activePageId = page.id;
             state.placedItems = page.items;
+            state.fx = page.fx = fxNormalizeAll(page.fx);
             state.selection = [];
             typeCaret = null;
             applySettings(page.settings);
@@ -4012,6 +5281,7 @@
                 ...newPage(`${src.name} copy`, src.width, src.height),
                 settings: { ...src.settings },
                 grid: JSON.parse(JSON.stringify(src.grid)),
+                fx: fxClone(src.fx || fxEmpty()),
                 items: src.items.map(it => ({ ...it }))
             };
             state.project.pages.splice(state.project.pages.indexOf(src) + 1, 0, p);
@@ -4129,10 +5399,10 @@
             capturePage();
             const P = state.project, used = new Map();
             const pages = P.pages.map(p => ({
-                id: p.id, name: p.name, width: p.width, height: p.height, settings: p.settings, grid: p.grid,
+                id: p.id, name: p.name, width: p.width, height: p.height, settings: p.settings, grid: p.grid, fx: p.fx || fxEmpty(),
                 items: p.items.map(it => {
                     used.set(it.stamp.id, it.stamp);
-                    return { stamp: it.stamp.id, x: it.x, y: it.y, rotation: it.rotation, scale: itemScale(it), color: it.color || null, blend: it.blend || null, seed: it.seed };
+                    return { stamp: it.stamp.id, x: it.x, y: it.y, rotation: it.rotation, scale: itemScale(it), color: it.color || null, blend: it.blend || null, fxSet: it.fxSet || null, seed: it.seed };
                 })
             }));
             // the stamps a project uses travel with it, so it still opens if they leave the library
@@ -4154,12 +5424,12 @@
             if (added) { refreshLibraryViews(); saveLibrary(); }
             const pages = (data.pages || []).map(p => ({
                 id: p.id || newId('page'), name: p.name || 'Page', width: p.width || 3840, height: p.height || 2160,
-                settings: p.settings, grid: p.grid,
+                settings: p.settings, grid: p.grid, fx: fxNormalizeAll(p.fx),
                 items: (p.items || []).filter(i => byId.has(i.stamp)).map(i => {
                     const st = byId.get(i.stamp);
                     return {
                         stamp: st, x: i.x, y: i.y, width: st.width, height: st.height, rotation: i.rotation || 0,
-                        scale: i.scale || 1, color: i.color || null, blend: i.blend || null, seed: i.seed ?? Math.floor(Math.random() * 999999)
+                        scale: i.scale || 1, color: i.color || null, blend: i.blend || null, fxSet: i.fxSet || null, seed: i.seed ?? Math.floor(Math.random() * 999999)
                     };
                 })
             }));
@@ -4317,6 +5587,7 @@
         window.onload = async function() {
             buildGridPanel();
             buildStampsPanel();
+            buildFxPanel();
             setGridPanel(window.innerWidth >= 1200, 'stamps');
             renderSheetTabs();
             if (window.lucide) lucide.createIcons();
