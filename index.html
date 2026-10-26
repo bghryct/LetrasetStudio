@@ -139,6 +139,26 @@
         .fx-note { font-size: 10.5px; line-height: 1.45; color: #71717a; margin-bottom: 8px; }
         .fx-toggle { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; letter-spacing: 0; text-transform: none; color: #a1a1aa; cursor: pointer; }
         .fx-toggle input { accent-color: #a78bfa; width: 14px; height: 14px; }
+        .fx-fold { border-top: 1px solid #27272a; }
+        .fx-fold > summary { cursor: pointer; padding: 8px 0; font-size: 11.5px; font-weight: 600; color: #d4d4d8; list-style: none; display: flex; justify-content: space-between; }
+        .fx-fold > summary::after { content: '+'; color: #71717a; }
+        .fx-fold[open] > summary::after { content: '−'; }
+        .fx-more { padding: 2px 0 8px; }
+        .fx-more-head { font-size: 11.5px; color: #e4e4e7; margin-bottom: 4px; }
+        .fx-more > div { padding-left: 20px; }
+        .fx-seg { display: flex; gap: 3px; }
+        .fx-seg button { flex: 1; font-size: 10.5px; padding: 4px 2px; border-radius: 5px; background: #18181b; border: 1px solid #27272a; color: #a1a1aa; }
+        .fx-seg button.is-on { background: rgba(167, 139, 250, 0.16); color: #ddd6fe; border-color: rgba(167, 139, 250, 0.5); }
+
+        /* Layers */
+        .layer-row { display: flex; align-items: center; gap: 6px; padding: 5px 6px; border-radius: 6px; border: 1px solid #27272a; background: #18181b; cursor: pointer; }
+        .layer-row:hover { border-color: #3f3f46; }
+        .layer-row.is-active { border-color: rgba(245, 158, 11, 0.6); background: rgba(245, 158, 11, 0.1); }
+        .layer-row.is-hidden .layer-name { color: #71717a; }
+        .layer-btn { color: #a1a1aa; padding: 2px; border-radius: 4px; }
+        .layer-btn:hover { color: #fafafa; background: #3f3f46; }
+        .layer-name { flex: 1; min-width: 0; color: #e4e4e7; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .layer-count { color: #71717a; font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
 
         /* Mylar Glare Effect */
         .mylar-glare {
@@ -314,6 +334,12 @@
                     <button data-tool="type" class="tool-btn px-3 py-1.5 text-zinc-400 hover:text-white rounded-md text-xs font-semibold flex items-center gap-1.5 transition" title="Type with a stamp group (T): click to set the caret, then type">
                         <i data-lucide="type" class="w-3.5 h-3.5"></i> Type
                     </button>
+                    <button data-tool="shape" class="tool-btn px-3 py-1.5 text-zinc-400 hover:text-white rounded-md text-xs font-semibold flex items-center gap-1.5 transition" title="Shape (U): drag to draw rectangles, ellipses, stars and lines">
+                        <i data-lucide="shapes" class="w-3.5 h-3.5"></i> Shape
+                    </button>
+                    <button data-tool="gradient" class="tool-btn px-3 py-1.5 text-zinc-400 hover:text-white rounded-md text-xs font-semibold flex items-center gap-1.5 transition" title="Gradient (J): drag to draw a gradient-filled shape that takes effects">
+                        <i data-lucide="blend" class="w-3.5 h-3.5"></i> Gradient
+                    </button>
                     <button data-tool="pan" class="tool-btn px-3 py-1.5 text-zinc-400 hover:text-white rounded-md text-xs font-semibold flex items-center gap-1.5 transition" title="Pan (H, or hold Space)">
                         <i data-lucide="hand" class="w-3.5 h-3.5"></i> Pan
                     </button>
@@ -332,13 +358,7 @@
                 <!-- Substrate Preset Selector -->
                 <div class="flex items-center gap-1.5">
                     <span class="text-xs text-zinc-400 font-medium">Substrate:</span>
-                    <select id="select-paper" class="bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-500">
-                        <option value="newsprint" selected>Aged Newsprint</option>
-                        <option value="kraft">Kraft Wood Pulp</option>
-                        <option value="linen">Crisp Cotton Linen</option>
-                        <option value="charcoal">Dark Charcoal</option>
-                        <option value="transparent">Transparent Substrate</option>
-                    </select>
+                    <select id="select-paper" class="bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-500"></select>
                 </div>
 
                 <div class="flex items-center gap-2">
@@ -353,6 +373,9 @@
                     </button>
                     <button id="btn-fx-panel" class="toggle-chip" title="Effects: impression, watercolour, plastic goo, distortions and lenses (E)">
                         <i data-lucide="wand-sparkles" class="w-3.5 h-3.5"></i> Effects
+                    </button>
+                    <button id="btn-layers-panel" class="toggle-chip" title="Layers (L)">
+                        <i data-lucide="layers" class="w-3.5 h-3.5"></i> Layers
                     </button>
                     <button id="btn-grid-panel" class="toggle-chip" title="Grid settings">
                         <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
@@ -405,7 +428,7 @@
                 </div>
                 <div>
                     <div class="flex justify-between mb-1">
-                        <span class="text-zinc-400">Frosted Mylar Opacity</span>
+                        <select id="select-mylar" class="bg-transparent text-zinc-400 hover:text-zinc-200 text-xs focus:outline-none cursor-pointer max-w-[80%]" title="The film laid over the artwork"></select>
                         <span id="val-mylar" class="text-zinc-500 font-mono">30%</span>
                     </div>
                     <input type="range" id="param-mylar" min="0" max="100" value="30">
@@ -419,6 +442,7 @@
                     <canvas id="design-canvas" width="3840" height="2160" class="block w-full h-full max-w-none bg-white"></canvas>
                     <!-- Frosted Mylar Layer Overlay -->
                     <div id="mylar-overlay" class="absolute inset-0 pointer-events-none mylar-glare"></div>
+                    <div id="mylar-sheen" class="absolute inset-0 pointer-events-none" style="display: none;"></div>
                 </div>
                 <canvas id="design-overlay" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
 
@@ -432,6 +456,18 @@
                     <button id="item-duplicate" class="text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-700 p-1 rounded-md" title="Duplicate (⌘/Ctrl+D)"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
                     <button id="item-reset" class="text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-700 px-2 py-1 rounded-md" title="Back to 100% and 0°">Reset</button>
                     <button id="item-delete" class="text-red-300 hover:text-red-200 bg-zinc-800 hover:bg-zinc-700 p-1 rounded-md" title="Delete (Del)"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                </div>
+
+                <!-- Shape / Gradient tool options -->
+                <div id="draw-options" class="absolute top-3 left-3 z-20 bg-zinc-900/95 border border-zinc-700 rounded-lg px-3 py-2 text-[11px] text-zinc-400 flex flex-wrap items-center gap-x-3 gap-y-2 max-w-[calc(100%-1.5rem)] shadow-xl" style="display: none;">
+                    <div id="draw-shapes" class="fx-seg" style="min-width: 320px"></div>
+                    <label class="flex items-center gap-1" data-draw="shape">Fill <select id="draw-fill" class="grid-input"><option value="solid">Solid</option><option value="outline">Outline</option></select></label>
+                    <label class="flex items-center gap-1" data-draw="shape">Colour <input id="draw-color" type="color" value="#1a1a1a" class="w-6 h-6 rounded border border-zinc-700 bg-transparent cursor-pointer p-0"></label>
+                    <label id="draw-stroke-wrap" class="flex items-center gap-1">Stroke <input id="draw-stroke" type="number" min="1" max="400" value="14" class="grid-input w-14"> px</label>
+                    <label class="flex items-center gap-1" data-draw="gradient">From <input id="grad-a" type="color" value="#1a1a1a" class="w-6 h-6 rounded border border-zinc-700 bg-transparent cursor-pointer p-0"></label>
+                    <label class="flex items-center gap-1" data-draw="gradient">To <input id="grad-b" type="color" value="#f59e0b" class="w-6 h-6 rounded border border-zinc-700 bg-transparent cursor-pointer p-0"></label>
+                    <label class="flex items-center gap-1" data-draw="gradient"><input id="grad-clear" type="checkbox" style="accent-color: #f59e0b"> fade to clear</label>
+                    <label class="flex items-center gap-1" data-draw="gradient">Direction <select id="grad-type" class="grid-input"><option value="linear-h">Across ↔</option><option value="linear-v">Down ↕</option><option value="drag">Along the drag</option><option value="radial">Radial</option></select></label>
                 </div>
 
                 <!-- Toast Tip -->
@@ -455,7 +491,7 @@
         </section>
 
         <!-- RIGHT INSPECTOR: Grid Systems (built by JS from GRID_UI) -->
-        <aside id="grid-panel" class="absolute lg:static right-0 inset-y-0 z-40 w-[300px] shrink-0 border-l border-zinc-800 bg-zinc-900 lg:bg-zinc-900/70 flex flex-col overflow-hidden shadow-2xl lg:shadow-none" style="display: none;">
+        <aside id="grid-panel" class="absolute lg:static right-0 inset-y-0 z-40 w-[340px] shrink-0 border-l border-zinc-800 bg-zinc-900 lg:bg-zinc-900/70 flex flex-col overflow-hidden shadow-2xl lg:shadow-none" style="display: none;">
             <div class="px-2 py-2 border-b border-zinc-800 bg-zinc-900 flex items-center justify-between gap-2 shrink-0">
                 <div class="flex items-center bg-zinc-950 p-1 rounded-lg border border-zinc-800 gap-1" id="panel-tabs">
                     <button data-panel="stamps" class="panel-tab px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 text-zinc-400">
@@ -467,6 +503,9 @@
                     <button data-panel="fx" class="panel-tab px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 text-zinc-400">
                         <i data-lucide="wand-sparkles" class="w-3.5 h-3.5"></i> Effects
                     </button>
+                    <button data-panel="layers" class="panel-tab px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 text-zinc-400">
+                        <i data-lucide="layers" class="w-3.5 h-3.5"></i> Layers
+                    </button>
                 </div>
                 <button id="btn-close-grid-panel" class="text-zinc-400 hover:text-zinc-100" title="Close">
                     <i data-lucide="x" class="w-4 h-4"></i>
@@ -475,6 +514,7 @@
             <div id="stamps-panel-body" class="flex-1 overflow-y-auto text-xs" style="display: none;"></div>
             <div id="grid-panel-body" class="flex-1 overflow-y-auto text-xs"></div>
             <div id="fx-panel-body" class="flex-1 overflow-y-auto text-xs" style="display: none;"></div>
+            <div id="layers-panel-body" class="flex-1 overflow-y-auto text-xs" style="display: none;"></div>
         </aside>
     </div>
 
@@ -599,6 +639,7 @@
             flaking: 40,
             wearNoise: 25,
             mylarOpacity: 30,
+            mylarKind: 'frosted',
 
             isInteracting: false
         };
@@ -645,7 +686,7 @@
         let spaceHeld = false;
         // Controls floating inside a viewport (zoom bars) keep their own clicks: the
         // viewport's pointer capture would otherwise swallow them as lasso points or stamps
-        const isViewportControl = (e) => !!(e.target.closest && e.target.closest('.zoom-bar, button, input, select, a'));
+        const isViewportControl = (e) => !!(e.target.closest && e.target.closest('.zoom-bar, #draw-options, #item-inspector, button, input, select, label, a'));
 
         class Viewport {
             constructor(el, content, overlay, { margin = 32, onChange = () => {}, zoomLabel = null } = {}) {
@@ -1598,10 +1639,31 @@
         // DESIGN CANVAS & DEGRADATION RENDER ENGINE
         // ------------------------------------------------------------------
 
-        const PAPER_COLORS = { newsprint: '#f3eee3', kraft: '#e4d3b8', linen: '#f8f8f6', charcoal: '#252528' };
+        // Paper stocks: a base colour and a texture, generated once per stock and page size.
+        // Textures read the shared noise tiles in page pixels, so they hold still.
+        const PAPERS = [
+            { id: 'newsprint', label: 'Aged Newsprint', base: [243, 238, 227] },
+            { id: 'kraft', label: 'Kraft Wood Pulp', base: [228, 211, 184] },
+            { id: 'linen', label: 'Crisp Cotton Linen', base: [248, 248, 246] },
+            { id: 'watercolour', label: 'Cold-Press Watercolour', base: [247, 244, 236] },
+            { id: 'washi', label: 'Japanese Washi', base: [244, 239, 226] },
+            { id: 'parchment', label: 'Parchment', base: [233, 216, 178] },
+            { id: 'ledger', label: 'Ruled Ledger', base: [247, 242, 224] },
+            { id: 'graph', label: 'Graph Paper', base: [250, 250, 246] },
+            { id: 'cardboard', label: 'Corrugated Card', base: [198, 158, 110] },
+            { id: 'greyboard', label: 'Recycled Greyboard', base: [170, 166, 158] },
+            { id: 'tracing', label: 'Tracing Paper', base: [236, 237, 235], alpha: 0.8 },
+            { id: 'blueprint', label: 'Blueprint', base: [30, 72, 150] },
+            { id: 'charcoal', label: 'Dark Charcoal', base: [37, 37, 40] },
+            { id: 'blackcard', label: 'Black Card', base: [18, 18, 20] },
+            { id: 'transparent', label: 'Transparent Substrate' }
+        ];
+        const PAPER_COLORS = Object.fromEntries(PAPERS.filter(q => q.base).map(q => [q.id, `rgb(${q.base.join(', ')})`]));
+        const paperSelect = document.getElementById('select-paper');
+        for (const q of PAPERS) paperSelect.append(new Option(q.label, q.id, q.id === 'newsprint', q.id === 'newsprint'));
 
-        // The paper only changes with the preset or the format; rebuilding its per-pixel
-        // noise on every drag move made large canvases crawl
+        // The paper only changes with the stock or the format; rebuilding its per-pixel
+        // texture on every drag move made large canvases crawl
         let paperKey = '';
         function generatePaperSubstrate() {
             const w = paperCanvas.width;
@@ -1610,32 +1672,115 @@
             if (key === paperKey) return;
             paperKey = key;
 
-            if (state.paperPreset === 'transparent') {
+            const stock = PAPERS.find(q => q.id === state.paperPreset) || PAPERS[0];
+            if (!stock.base) {
                 paperCtx.clearRect(0, 0, w, h);
                 return;
             }
-
-            const bgColor = PAPER_COLORS[state.paperPreset] || PAPER_COLORS.newsprint;
-
-            paperCtx.fillStyle = bgColor;
-            paperCtx.fillRect(0, 0, w, h);
-
-            const imgData = paperCtx.getImageData(0, 0, w, h);
-            const data = imgData.data;
-            const rng = mulberry32(888);
-
-            for (let i = 0; i < data.length; i += 4) {
-                const noise = (rng() - 0.5) * 18;
-                data[i] = Math.min(255, Math.max(0, data[i] + noise));
-                data[i+1] = Math.min(255, Math.max(0, data[i+1] + noise));
-                data[i+2] = Math.min(255, Math.max(0, data[i+2] + noise));
+            const img = paperCtx.createImageData(w, h), d = img.data, T = getWearTiles(), rng = mulberry32(888);
+            const [br, bg, bb] = stock.base, alpha = Math.round((stock.alpha || 1) * 255), id = stock.id;
+            const ts = (t, x, y) => tileSample(t, x, y) - 0.5;
+            // line spacings for the printed papers
+            const rule = Math.max(24, Math.round(h / 54)), margin = Math.round(w * 0.09), cell = Math.max(8, Math.round(w / 320));
+            const flute = Math.max(14, Math.round(h / 90)), edge = Math.min(w, h) * 0.14;
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const q = (y * w + x) * 4, grain = rng() - 0.5;
+                    let l = 0, r = 0, g = 0, b = 0;   // l lightens all channels; r, g, b tint
+                    if (id === 'newsprint') l = grain * 18 + ts(T.fine, x * 0.6, y * 0.15) * 6;
+                    else if (id === 'kraft') { l = grain * 20 + ts(T.fine, x * 0.5, y * 0.08) * 24 + ts(T.coarse, x * 0.08, y * 0.08) * 16; b = -Math.max(0, ts(T.mid, x * 0.4, y * 0.05)) * 18; }
+                    else if (id === 'linen') l = (Math.sin(x * 1.6) + Math.sin(y * 1.6)) * 2.2 + ts(T.mid, x * 0.08, y * 2) * 9 + ts(T.mid, x * 2 + 300, y * 0.08) * 9 + grain * 6;
+                    else if (id === 'watercolour') {
+                        // cold-press tooth, embossed toward the light
+                        const hgt = (xx, yy) => tileSample(T.mid, xx * 0.22, yy * 0.22) * 0.7 + tileSample(T.fine, xx * 0.6, yy * 0.6) * 0.3;
+                        l = (hgt(x - 1.5, y - 1.5) - hgt(x + 1.5, y + 1.5)) * 70 + grain * 6;
+                    } else if (id === 'washi') l = ts(T.coarse, x * 0.05, y * 0.05) * 22 + ts(T.mid, x * 0.3, y * 0.3) * 6 + grain * 5;
+                    else if (id === 'parchment') {
+                        // warm stains and an edge browned with age
+                        const ex = Math.min(x, y, w - 1 - x, h - 1 - y), burn = Math.pow(1 - smooth(0, edge, ex), 2), blot = Math.max(0, ts(T.coarse, x * 0.06, y * 0.06)) * 50;
+                        l = -blot + ts(T.mid, x * 0.25, y * 0.25) * 12 + grain * 8 - burn * 55;
+                        r = blot * 0.3 + burn * 18; g = -burn * 4; b = -blot * 0.35 - burn * 30;
+                    } else if (id === 'ledger') {
+                        l = grain * 8;
+                        if (y % rule < 2 && y > rule * 2) { r = -85; g = -55; b = -20; }
+                        if (Math.abs(x - margin) < 2 || Math.abs(x - margin - 6) < 1) { r = -40; g = -150; b = -140; }
+                    } else if (id === 'graph') {
+                        l = grain * 5;
+                        if (x % (cell * 5) < 2 || y % (cell * 5) < 2) { r = -110; g = -55; b = -40; }
+                        else if (x % cell === 0 || y % cell === 0) { r = -60; g = -28; b = -18; }
+                    } else if (id === 'cardboard') l = Math.sin(y / flute * Math.PI * 2) * 11 + ts(T.fine, x * 0.4, y * 0.4) * 18 + grain * 14 - (rng() < 0.002 ? 50 : 0);
+                    else if (id === 'greyboard') {
+                        l = grain * 26 + ts(T.mid, x * 0.3, y * 0.3) * 14;
+                        const f = tileSample(T.pin, x * 0.9, y * 0.9);
+                        if (f > 0.985) { l -= 60; } else if (f < 0.006) { r = -50; g = -20; b = 60; }   // recycled flecks
+                    } else if (id === 'tracing') l = grain * 7 + ts(T.coarse, x * 0.05, y * 0.05) * 10;
+                    else if (id === 'blueprint') { l = ts(T.coarse, x * 0.06, y * 0.06) * 34 + ts(T.mid, x * 0.3, y * 0.3) * 10 + grain * 10; r = l * -0.3; }
+                    else l = grain * (id === 'blackcard' ? 8 : 18);
+                    d[q] = br + l + r; d[q + 1] = bg + l + g; d[q + 2] = bb + l + b; d[q + 3] = alpha;
+                }
             }
-            paperCtx.putImageData(imgData, 0, 0);
+            paperCtx.putImageData(img, 0, 0);
+            if (id === 'washi') {
+                // long, wandering kozo fibres
+                paperCtx.lineCap = 'round';
+                for (let f = Math.round(w * h / 2500); f > 0; f--) {
+                    let x = rng() * w, y = rng() * h, a = rng() * Math.PI * 2;
+                    paperCtx.strokeStyle = rng() < 0.6 ? 'rgba(255, 255, 255, 0.5)' : 'rgba(150, 130, 100, 0.22)';
+                    paperCtx.lineWidth = 0.6 + rng() * 1.4;
+                    paperCtx.beginPath();
+                    paperCtx.moveTo(x, y);
+                    for (let s = 6 + Math.floor(rng() * 20); s > 0; s--) { a += (rng() - 0.5) * 0.5; x += Math.cos(a) * 9; y += Math.sin(a) * 9; paperCtx.lineTo(x, y); }
+                    paperCtx.stroke();
+                }
+            }
         }
 
-        // One stamp, blended onto the page. Work stays inside the stamp's bounding box, which
-        // keeps large pages fast.
-        function drawPlainItem(item, pressure, w, h) {
+
+        // ------------------------------------------------------------------
+        // LAYERS
+        // ------------------------------------------------------------------
+        // A page's layers, bottom first. Every stamp sits on one; new stamps, shapes and
+        // gradients go on the active layer. Hidden layers neither render nor select; locked
+        // layers render but can't be picked.
+        const newLayer = (name) => ({ id: newId('layer'), name, visible: true, locked: false, opacity: 100, blend: 'source-over' });
+        state.layers = [newLayer('Layer 1')];
+        state.activeLayer = state.layers[0].id;
+        const layerOf = (it) => state.layers.find(L => L.id === it.layer) || state.layers[0];
+        const activeLayerObj = () => state.layers.find(L => L.id === state.activeLayer) || state.layers[state.layers.length - 1];
+        const isShown = (it) => layerOf(it).visible;
+        const isPickable = (it) => { const L = layerOf(it); return L.visible && !L.locked; };
+        // Stamps in drawing order: layer by layer, then as placed
+        function itemsInOrder() {
+            const order = new Map(state.layers.map((L, i) => [L.id, i]));
+            return state.placedItems.map((it, i) => [it, order.get(it.layer) ?? 0, i]).sort((a, b) => a[1] - b[1] || a[2] - b[2]).map(e => e[0]);
+        }
+        // Give a page layers if it has none, and put every stamp on one
+        function ensureLayers(page) {
+            if (!Array.isArray(page.layers) || !page.layers.length) page.layers = [newLayer('Layer 1')];
+            page.layers = page.layers.map(L => ({ ...newLayer(L.name || 'Layer'), ...L }));
+            const ids = new Set(page.layers.map(L => L.id));
+            for (const it of page.items) if (!ids.has(it.layer)) it.layer = page.layers[0].id;
+            if (!ids.has(page.activeLayer)) page.activeLayer = page.layers[page.layers.length - 1].id;
+        }
+        // Can new stamps go on the active layer? Says why not.
+        function activeLayerReady() {
+            const A = activeLayerObj();
+            if (A.visible && !A.locked) return true;
+            toast(`“${A.name}” is ${A.visible ? 'locked' : 'hidden'}: ${A.visible ? 'unlock' : 'show'} it in the Layers panel, or make another layer active.`);
+            return false;
+        }
+        // A layer with its own opacity or blend mode is gathered here, then laid down whole
+        const layerCanvas = document.createElement('canvas');
+        const layerCtx = layerCanvas.getContext('2d');
+        function freshLayerCanvas(w, h) {
+            if (layerCanvas.width !== w || layerCanvas.height !== h) { layerCanvas.width = w; layerCanvas.height = h; }
+            else layerCtx.clearRect(0, 0, w, h);
+            return layerCtx;
+        }
+
+        // One stamp, blended onto the page (or a layer's scratch page). Work stays inside the
+        // stamp's bounding box, which keeps large pages fast.
+        function drawPlainItem(item, pressure, w, h, ctx = designCtx) {
             const deg = createDegradedStampCanvas(item, pressure), b = itemDrawBox(item, deg);
             const x0 = Math.max(0, Math.floor(b.x0)), y0 = Math.max(0, Math.floor(b.y0));
             const x1 = Math.min(w, Math.ceil(b.x1)), y1 = Math.min(h, Math.ceil(b.y1));
@@ -1646,8 +1791,8 @@
             trCtx.globalCompositeOperation = 'source-over';
             trCtx.clearRect(0, 0, bw, bh);
             drawItemInto(trCtx, item, deg, x0, y0);
-            designCtx.globalCompositeOperation = itemBlend(item);
-            designCtx.drawImage(transferredCanvas, 0, 0, bw, bh, x0, y0, bw, bh);
+            ctx.globalCompositeOperation = itemBlend(item);
+            ctx.drawImage(transferredCanvas, 0, 0, bw, bh, x0, y0, bw, bh);
         }
 
         function renderDesignCanvas() {
@@ -1658,22 +1803,39 @@
             designCtx.clearRect(0, 0, w, h);
             designCtx.drawImage(paperCanvas, 0, 0);
 
-            // Each stamp blends, with its own mode, onto the paper and every stamp beneath it,
-            // so overlapping inks overprint. A set with layer effects (watercolour, goo,
-            // distortion) lands as one layer where its lowest stamp sits; relief goes on last.
-            const quality = fxQuality(), sets = fxCollect(), layered = new Set();
+            // Layers draw bottom to top. Each stamp blends, with its own mode, onto the paper and
+            // everything beneath it, so overlapping inks overprint. A layer with its own opacity
+            // or blend mode is gathered on a scratch page first and laid down whole. An effect
+            // set (per layer) lands as one image where its lowest stamp sits; relief goes on last.
+            const quality = fxQuality(), drawn = itemsInOrder().filter(isShown), sets = fxCollect(drawn, true), layered = new Set();
             fxCost = 0;
-            for (const item of state.placedItems) {
-                const S = sets.get(fxSetId(item));
-                if (!fxNeedsLayer(S.rec)) { drawPlainItem(item, S.rec.press.strength, w, h); continue; }
+            let ctx = designCtx, cur = null;
+            const flush = () => {
+                if (ctx === designCtx) return;
+                designCtx.globalCompositeOperation = cur.blend;
+                designCtx.globalAlpha = cur.opacity / 100;
+                designCtx.drawImage(layerCanvas, 0, 0);
+                designCtx.globalAlpha = 1;
+                ctx = designCtx;
+            };
+            for (const item of drawn) {
+                const Ly = layerOf(item);
+                if (Ly !== cur) {
+                    flush();
+                    cur = Ly;
+                    if (Ly.opacity < 100 || Ly.blend !== 'source-over') ctx = freshLayerCanvas(w, h);
+                }
+                const S = sets.get(fxDrawKey(item));
+                if (!fxNeedsLayer(S.rec)) { drawPlainItem(item, S.rec.press.strength, w, h, ctx); continue; }
                 if (layered.has(S)) continue;
                 layered.add(S);
                 const L = fxRender(S, quality).layer;
                 if (L) {
-                    designCtx.globalCompositeOperation = L.op;
-                    designCtx.drawImage(L.canvas, L.x, L.y, L.w, L.h);
+                    ctx.globalCompositeOperation = L.op;
+                    ctx.drawImage(L.canvas, L.x, L.y, L.w, L.h);
                 }
             }
+            flush();
             for (const S of sets.values()) {
                 const R = S.rec.press.depth ? fxRender(S, quality).relief : null;
                 if (!R) continue;
@@ -1686,11 +1848,18 @@
             fxAfterRender(quality, sets);
             markProjectDirty();
 
-            const mylar = document.getElementById('mylar-overlay'), m = mylarRecipe();
-            mylar.style.backgroundColor = `rgba(${MYLAR_TINT}, ${m.tint})`;
-            mylar.style.backgroundImage = `linear-gradient(135deg, ${MYLAR_GLARE.map(([o, a]) => `rgba(255, 255, 255, ${a}) ${o * 100}%`).join(', ')})`;
+            const mylar = document.getElementById('mylar-overlay'), sheen = document.getElementById('mylar-sheen'), m = mylarRecipe();
+            mylar.style.backgroundColor = m.multiply ? 'transparent' : `rgba(${m.tint.join(', ')}, ${m.tintA})`;
+            mylar.style.backgroundImage = `linear-gradient(135deg, ${MYLAR_GLARE.map(([o, a]) => `rgba(255, 255, 255, ${a * m.glare}) ${o * 100}%`).join(', ')})`;
             mylar.style.backdropFilter = `blur(${m.blur}px) contrast(${m.contrast * 100}%)`;
             mylar.style.opacity = m.alpha;
+            // coloured acetates multiply; holographic film shimmers; old film is scratched
+            sheen.style.display = m.multiply || m.rainbow || m.scratches ? '' : 'none';
+            sheen.style.mixBlendMode = m.multiply ? 'multiply' : m.rainbow ? 'color' : 'normal';
+            sheen.style.backgroundColor = m.multiply ? `rgb(${m.tint.join(', ')})` : 'transparent';
+            sheen.style.backgroundImage = m.rainbow ? `repeating-linear-gradient(115deg, ${MYLAR_RAINBOW.map(([c, o]) => `${c} ${o}%`).join(', ')})` : m.scratches ? `url(${mylarScratches().toDataURL()})` : 'none';
+            sheen.style.backgroundSize = '100% 100%';
+            sheen.style.opacity = m.multiply ? m.tintA * m.alpha : m.rainbow ? 0.45 * m.alpha : 0.9 * m.alpha;
 
             drawDesignOverlay();
         }
@@ -1701,12 +1870,69 @@
         // On screen the sheet is a CSS layer (backdrop blur + contrast, a milky tint and a
         // diagonal glare, all at the layer's opacity), so it never reached the canvas.
         // Exports rebuild the same recipe on the flattened image.
-        const MYLAR_TINT = '245, 248, 252';
         const MYLAR_GLARE = [[0, 0.22], [0.25, 0.04], [0.5, 0], [0.75, 0.12], [1, 0.28]];
 
+        // Kinds of film. blur and contrast soften what's underneath; the tint is laid over it
+        // (multiplied, for coloured acetates); glare scales the diagonal sheen.
+        const MYLARS = [
+            { id: 'frosted', label: 'Frosted Mylar', blur: 3, contrast: 0.2, tint: [245, 248, 252], tintA: 0.35, glare: 1 },
+            { id: 'clear', label: 'Clear gloss film', blur: 0, contrast: 0.08, tint: [250, 252, 255], tintA: 0.05, glare: 1.9 },
+            { id: 'matte', label: 'Matte drafting film', blur: 6, contrast: 0.04, tint: [240, 242, 238], tintA: 0.55, glare: 0.25 },
+            { id: 'holo', label: 'Holographic film', blur: 1, contrast: 0.15, tint: [245, 248, 252], tintA: 0.12, glare: 1.3, rainbow: true },
+            { id: 'amber', label: 'Amber acetate', blur: 0.5, contrast: 0.1, tint: [238, 168, 48], tintA: 0.55, glare: 0.9, multiply: true },
+            { id: 'rubylith', label: 'Rubylith', blur: 0, contrast: 0.05, tint: [214, 36, 48], tintA: 0.7, glare: 0.7, multiply: true },
+            { id: 'smoked', label: 'Smoked acetate', blur: 0.5, contrast: 0.15, tint: [70, 70, 78], tintA: 0.5, glare: 1, multiply: true },
+            { id: 'scratched', label: 'Scratched, yellowed film', blur: 1.5, contrast: 0.1, tint: [238, 226, 186], tintA: 0.32, glare: 0.8, scratches: true }
+        ];
+        const MYLAR_RAINBOW = [['#ff3d9a', 0], ['#ffd23d', 3], ['#3dffb8', 6], ['#3da0ff', 9], ['#b33dff', 12], ['#ff3d9a', 15]];
+        const mylarSelect = document.getElementById('select-mylar');
+        for (const k of MYLARS) mylarSelect.append(new Option(k.label, k.id));
+
         function mylarRecipe() {
-            const op = state.mylarOpacity / 100;
-            return { blur: op * 3, contrast: 1 + op * 0.2, tint: op * 0.35, alpha: Math.min(1, op + 0.1) };
+            const op = state.mylarOpacity / 100, k = MYLARS.find(x => x.id === state.mylarKind) || MYLARS[0];
+            return { ...k, blur: op * k.blur, contrast: 1 + op * k.contrast, tintA: op * k.tintA, alpha: Math.min(1, op + 0.1) };
+        }
+
+        // Scratches and dust on old film, drawn once per page size: long, mostly parallel
+        // hairlines from handling, with a few stray ones
+        let scratchCache = null;
+        function mylarScratches() {
+            const W = state.canvasWidth, H = state.canvasHeight, key = `${W}x${H}`;
+            if (scratchCache && scratchCache.key === key) return scratchCache.canvas;
+            const c = document.createElement('canvas'), s = 0.5;
+            c.width = Math.round(W * s);
+            c.height = Math.round(H * s);
+            const x = c.getContext('2d'), rng = mulberry32(4242), main = rng() * Math.PI;
+            x.lineCap = 'round';
+            for (let n = Math.round(W * H / 30000); n > 0; n--) {
+                const a = rng() < 0.75 ? main + (rng() - 0.5) * 0.25 : rng() * Math.PI, len = (0.05 + rng() * 0.4) * Math.max(W, H) * s;
+                const x0 = rng() * c.width, y0 = rng() * c.height, k = 0.25 + rng() * 0.5, bend = [(rng() - 0.5) * 20, (rng() - 0.5) * 20];
+                x.lineWidth = 0.4 + rng() * 0.9;
+                for (const [dx, col] of [[0, `rgba(80, 70, 50, ${k * 0.7})`], [0.8, `rgba(255, 255, 255, ${k})`]]) {
+                    x.strokeStyle = col;
+                    x.beginPath();
+                    x.moveTo(x0 + dx, y0 + dx);
+                    x.quadraticCurveTo(x0 + dx + Math.cos(a) * len * 0.5 + bend[0], y0 + dx + Math.sin(a) * len * 0.5 + bend[1], x0 + dx + Math.cos(a) * len, y0 + dx + Math.sin(a) * len);
+                    x.stroke();
+                }
+            }
+            x.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            for (let n = Math.round(W * H / 6000); n > 0; n--) { x.beginPath(); x.arc(rng() * c.width, rng() * c.height, 0.4 + rng() * 1.2, 0, Math.PI * 2); x.fill(); }
+            scratchCache = { key, canvas: c };
+            return c;
+        }
+        // The holographic sheen as a canvas gradient: the CSS repeating stripe, laid out along
+        // a 115° line across the page
+        function mylarRainbow(c, W, H) {
+            const a = 115 * Math.PI / 180, len = Math.abs(W * Math.sin(a)) + Math.abs(H * Math.cos(a));
+            const dx = Math.sin(a) * len / 2, dy = -Math.cos(a) * len / 2, g = c.createLinearGradient(W / 2 - dx, H / 2 - dy, W / 2 + dx, H / 2 + dy);
+            for (let rep = 0; rep < 100 / 15; rep++) {
+                for (const [col, o] of MYLAR_RAINBOW) {
+                    const at = (rep * 15 + o) / 100;
+                    if (at <= 1) g.addColorStop(at, col);
+                }
+            }
+            return g;
         }
 
         // End points of a CSS "135deg" gradient line across a W×H box
@@ -1762,16 +1988,34 @@
                 }
                 l.putImageData(id, 0, 0);
             }
-            l.fillStyle = `rgba(${MYLAR_TINT}, ${m.tint})`;
-            l.fillRect(0, 0, W, H);
+            if (!m.multiply) {
+                l.fillStyle = `rgba(${m.tint.join(', ')}, ${m.tintA})`;
+                l.fillRect(0, 0, W, H);
+            }
             const [x1, y1, x2, y2] = glareLine(W, H), g = l.createLinearGradient(x1, y1, x2, y2);
-            MYLAR_GLARE.forEach(([o, a]) => g.addColorStop(o, `rgba(255, 255, 255, ${a})`));
+            MYLAR_GLARE.forEach(([o, a]) => g.addColorStop(o, `rgba(255, 255, 255, ${a * m.glare})`));
             l.fillStyle = g;
             l.fillRect(0, 0, W, H);
 
             c.save();
             c.globalAlpha = m.alpha;
             c.drawImage(layer, 0, 0);
+            // the second film layer, as on screen
+            if (m.multiply) {
+                c.globalAlpha = m.tintA * m.alpha;
+                c.globalCompositeOperation = 'multiply';
+                c.fillStyle = `rgb(${m.tint.join(', ')})`;
+                c.fillRect(0, 0, W, H);
+            } else if (m.rainbow) {
+                c.globalAlpha = 0.45 * m.alpha;
+                c.globalCompositeOperation = 'color';
+                c.fillStyle = mylarRainbow(c, W, H);
+                c.fillRect(0, 0, W, H);
+            } else if (m.scratches) {
+                c.globalAlpha = 0.9 * m.alpha;
+                c.globalCompositeOperation = 'source-over';
+                c.drawImage(mylarScratches(), 0, 0, W, H);
+            }
             c.restore();
         }
 
@@ -1788,15 +2032,18 @@
                 `      <feComponentTransfer>${func('R')}${func('G')}${func('B')}</feComponentTransfer>`,
                 '    </filter>',
                 `    <linearGradient id="mylarGlare" gradientUnits="userSpaceOnUse" x1="${n(x1)}" y1="${n(y1)}" x2="${n(x2)}" y2="${n(y2)}">`,
-                ...MYLAR_GLARE.map(([o, a]) => `      <stop offset="${o}" stop-color="#ffffff" stop-opacity="${a}"/>`),
+                ...MYLAR_GLARE.map(([o, a]) => `      <stop offset="${o}" stop-color="#ffffff" stop-opacity="${n(a * m.glare)}"/>`),
                 '    </linearGradient>',
                 '  </defs>',
                 `  <g id="mylar" opacity="${n(m.alpha)}">`,
                 '    <use href="#art" xlink:href="#art" filter="url(#mylarFrost)"/>',
-                `    <rect width="${W}" height="${H}" fill="rgb(${MYLAR_TINT})" fill-opacity="${n(m.tint)}"/>`,
+                m.multiply ? '' : `    <rect width="${W}" height="${H}" fill="rgb(${m.tint.join(', ')})" fill-opacity="${n(m.tintA)}"/>`,
                 `    <rect width="${W}" height="${H}" fill="url(#mylarGlare)"/>`,
-                '  </g>'
-            ].join('\n') + '\n';
+                '  </g>',
+                m.multiply ? `  <rect width="${W}" height="${H}" fill="rgb(${m.tint.join(', ')})" opacity="${n(m.tintA * m.alpha)}" style="mix-blend-mode:multiply"/>` : '',
+                m.rainbow ? `  <defs><linearGradient id="mylarRainbow" gradientUnits="userSpaceOnUse" x1="0" y1="${H}" x2="${n(W * 0.15)}" y2="${n(H - W * 0.32)}" spreadMethod="repeat">${MYLAR_RAINBOW.map(([col, o]) => `<stop offset="${n(o / 15)}" stop-color="${col}"/>`).join('')}</linearGradient></defs>\n  <rect width="${W}" height="${H}" fill="url(#mylarRainbow)" opacity="${n(0.45 * m.alpha)}" style="mix-blend-mode:color"/>` : '',
+                m.scratches ? `  <image width="${W}" height="${H}" preserveAspectRatio="none" href="${mylarScratches().toDataURL()}" opacity="${n(0.9 * m.alpha)}"/>` : ''
+            ].filter(Boolean).join('\n') + '\n';
         }
 
         // ------------------------------------------------------------------
@@ -2055,8 +2302,15 @@
         function createDegradedStampCanvas(item, pressure = itemPressure(item)) {
             const key = `${state.flaking}|${state.wearNoise}|${item.color || ''}|${pressure}`;
             if (!item.degraded || item.degraded.key !== key) {
-                let c = degradeStamp(item.stamp, item.seed);
-                if (item.color) {
+                const gradient = item.stamp.kind === 'gradient';
+                let c;
+                if (gradient) {   // gradients keep their colours and skip the wear
+                    c = document.createElement('canvas');
+                    c.width = item.stamp.width;
+                    c.height = item.stamp.height;
+                    c.getContext('2d', { willReadFrequently: true }).drawImage(item.stamp.canvas, 0, 0);
+                } else c = degradeStamp(item.stamp, item.seed);
+                if (item.color && !gradient) {
                     // recolour the worn ink, keeping its alpha (flakes, cracks, edges)
                     const x = c.getContext('2d');
                     x.globalCompositeOperation = 'source-in';
@@ -2129,12 +2383,16 @@
             press: { strength: 50, depth: 0, light: 135 },
             water: { on: false, bleed: 50, bloom: 55, grain: 40, drips: 0 },
             goo: { on: false, melt: 50, reach: 50, strings: 50, gloss: 60, drips: 0 },
-            warp: { type: 'none', amount: 50, size: 50, freq: 50, angle: 0, cx: 0.5, cy: 0.5 }
+            warp: { type: 'none', amount: 50, size: 50, freq: 50, angle: 0, cx: 0.5, cy: 0.5 },
+            more: fxMoreDefaults()   // the registry's effects, below
         });
         const fxClone = (v) => JSON.parse(JSON.stringify(v));
         function fxNormalize(rec) {
             const d = fxDefaults();
-            for (const k of Object.keys(d)) Object.assign(d[k], rec && rec[k]);
+            for (const k of Object.keys(d)) {
+                if (k === 'more') for (const id of Object.keys(d.more)) Object.assign(d.more[id], rec && rec.more && rec.more[id]);
+                else Object.assign(d[k], rec && rec[k]);
+            }
             if (!FX_WARP[d.warp.type]) d.warp.type = 'none';
             return d;
         }
@@ -2144,12 +2402,10 @@
             for (const [id, rec] of Object.entries((fx && fx.sets) || {})) out.sets[id] = fxNormalize(rec);
             return out;
         }
-        state.fx = fxEmpty();   // the live page's effects: { page, sets: { id: rec } }
-
         const fxSetId = (it) => it.fxSet && state.fx.sets[it.fxSet] ? it.fxSet : 'page';
         const fxRecOf = (id) => id === 'page' ? state.fx.page : state.fx.sets[id];
         const itemPressure = (it) => fxRecOf(fxSetId(it)).press.strength;
-        const fxNeedsLayer = (r) => r.water.on || r.goo.on || r.warp.type !== 'none';
+        const fxNeedsLayer = (r) => r.water.on || r.goo.on || r.warp.type !== 'none' || fxMoreOn(r);
         const fxGet = (rec, key) => key.split('.').reduce((o, k) => o[k], rec);
         const fxPut = (rec, key, v) => { const ks = key.split('.'), last = ks.pop(); ks.reduce((o, k) => o[k], rec)[last] = v; };
         const fxInk = (it) => it.color || stampInkHex(it.stamp);
@@ -2160,16 +2416,18 @@
             for (const id of Object.keys(state.fx.sets)) if (!used.has(id)) delete state.fx.sets[id];
         }
         // The page's stamps by effect set, each set's stamps in stacking order
-        function fxCollect() {
+        // (Drawing splits each set per layer, so a layer stays a layer: keys are set@layer.)
+        function fxCollect(items = state.placedItems, byLayer = false) {
             fxPrune();
             const sets = new Map();
-            for (const it of state.placedItems) {
-                const id = fxSetId(it);
-                if (!sets.has(id)) sets.set(id, { id, rec: fxRecOf(id), items: [] });
-                sets.get(id).items.push(it);
+            for (const it of items) {
+                const id = fxSetId(it), key = byLayer ? `${id}@${it.layer}` : id;
+                if (!sets.has(key)) sets.set(key, { id: key, rec: fxRecOf(id), items: [] });
+                sets.get(key).items.push(it);
             }
             return sets;
         }
+        const fxDrawKey = (it) => `${fxSetId(it)}@${it.layer}`;
 
         // Effect distances follow the type size: a set's typical letter height in page px
         const fxRefSize = (items) => Math.max(8, median(items.map(it => { const k = stampInkBox(it.stamp); return (k.y1 - k.y0) * itemScale(it); })));
@@ -2319,8 +2577,10 @@
         function fxBlend(S) {
             const own = S.items.find(it => it.blend);
             if (own) return own.blend;
-            if (S.rec.goo.on) return 'source-over';   // opaque plastic; multiply would also swallow its white gloss
-            return itemBlend(S.items[0]);
+            // opaque plastic, glass, thread and tile; multiply would also swallow their highlights
+            if (S.rec.goo.on || FX_MORE.some(E => E.opaque && S.rec.more[E.id].on)) return 'source-over';
+            const forced = FX_MORE.find(E => E.blend && S.rec.more[E.id].on);
+            return forced ? forced.blend : itemBlend(S.items[0]);
         }
 
         function fxBuildLayer(S, quality) {
@@ -2331,19 +2591,24 @@
             if (r.goo.on) m += fxReach(r, ref) * 1.5 + fxStrandReach(r, ref) * 0.45 + ref * 1.4 * r.goo.drips / 100;
             if (r.water.on) m += fxBleed(r, ref) * 1.6 + ref * 1.9 * r.water.drips / 100;
             if (r.warp.type !== 'none') m += Math.abs(r.warp.amount) / 100 * big * 0.35 + ref * 0.2;
+            for (const E of FX_MORE) if (E.margin && r.more[E.id].on) m += E.margin(r.more[E.id], ref);
             const x0 = Math.max(0, Math.floor(B.x0 - m)), y0 = Math.max(0, Math.floor(B.y0 - m));
             const x1 = Math.min(W, Math.ceil(B.x1 + m)), y1 = Math.min(H, Math.ceil(B.y1 + m));
             if (x1 <= x0 || y1 <= y0) return null;
             const w = x1 - x0, h = y1 - y0;
             // very large sets are worked below page resolution
             const k = Math.min(1, Math.sqrt((quality === 'draft' ? 0.5e6 : 4e6) / (w * h)));
-            const C = { x0, y0, w, h, k, cw: Math.max(1, Math.round(w * k)), ch: Math.max(1, Math.round(h * k)), ref, rec: r, items, quality };
+            const C = { x0, y0, w, h, k, cw: Math.max(1, Math.round(w * k)), ch: Math.max(1, Math.round(h * k)), ref, rec: r, items, quality, B,
+                seed: items.reduce((sd, it) => (Math.imul(sd, 31) + it.seed) >>> 0, 7) };
+            const stage = (name) => { for (const E of FX_MORE) if (E.stage === name && r.more[E.id].on) layer = E.run(layer, C, r.more[E.id]); };
             let layer = fxCanvas(C.cw, C.ch);
             const lc = fx2d(layer);
             for (const it of items) drawItemInto(lc, it, createDegradedStampCanvas(it, r.press.strength), x0, y0, k);
             if (r.goo.on) layer = fxGoo(layer, C);
             if (r.water.on) layer = fxWater(layer, C);
+            stage('shape');
             if (r.warp.type !== 'none') layer = fxWarp(layer, C);
+            stage('print');
             return { canvas: toGPU(layer), x: x0, y: y0, w, h, op: fxBlend(S) };
         }
 
@@ -2953,6 +3218,1103 @@
         }
 
         // ------------------------------------------------------------------
+        // MORE EFFECTS: twenty processes for print, craft, light, matter and growth
+        // ------------------------------------------------------------------
+        // Each takes a set's layer (C.cw × C.ch canvas, C.k layer px per page px) and returns a
+        // new one. 'shape' effects run before the distortion, so a lens bends what they made;
+        // 'print' effects run after it, like the last pass through a press. Sliders run 0–100
+        // unless a row says otherwise. Noise is read in page coordinates, so nothing shimmers
+        // when a layer is rebuilt.
+        const deg = (v) => `${v}°`;
+        const FX_MORE = [
+            // Print & copy
+            { id: 'halftone', cat: 'Print & copy', label: 'Halftone screen', stage: 'print', run: fxHalftone,
+                tip: 'Printed through a rotated dot screen: each dot grows with the ink under it, like a newspaper photo.',
+                params: [{ key: 'size', label: 'Dot size', def: 35 }, { key: 'tint', label: 'Ink density', def: 70 }, { key: 'tone', label: 'Screen by darkness', def: 0, tip: 'Dots also shrink where the ink is lighter, so a gradient between two colours becomes a tone ramp.' }, { key: 'angle', label: 'Screen angle', def: 45, max: 90, fmt: deg }, { key: 'shape', label: 'Dots ↔ lines', def: 0 }] },
+            { id: 'riso', cat: 'Print & copy', label: 'Riso misregister', stage: 'print', blend: 'multiply', run: fxRiso,
+                tip: 'Split into cyan, magenta and yellow drums that never quite line up, with grainy, uneven ink.',
+                params: [{ key: 'offset', label: 'Misregistration', def: 45 }, { key: 'grain', label: 'Grain', def: 50 }, { key: 'fade', label: 'Uneven inking', def: 35 }],
+                margin: (p, ref) => ref * 0.05 * p.offset / 100 },
+            { id: 'copy', cat: 'Print & copy', label: 'Photocopy generations', stage: 'print', run: fxCopy,
+                tip: 'A copy of a copy of a copy: each generation blurs, re-thresholds and picks up toner, so letters bloat or erode.',
+                params: [{ key: 'copies', label: 'Generations', def: 45, fmt: v => `${1 + Math.round(v / 100 * 11)}×` }, { key: 'dark', label: 'Erode ↔ bloat', def: 55 }, { key: 'toner', label: 'Toner specks', def: 40 }],
+                margin: (p, ref) => ref * 0.05 },
+            { id: 'wood', cat: 'Print & copy', label: 'Wood type', stage: 'shape', run: fxWood,
+                tip: 'Printed from worn wooden blocks: growth rings, bent grain and open pores break up the ink.',
+                params: [{ key: 'grain', label: 'Grain size', def: 40 }, { key: 'wear', label: 'Wear', def: 55 }, { key: 'angle', label: 'Grain angle', def: 0, min: -90, max: 90, fmt: deg }] },
+            { id: 'engrave', cat: 'Print & copy', label: 'Engraving', stage: 'shape', run: fxEngrave,
+                tip: 'Banknote line engraving: each stroke is modelled as a dome, and the hatching swells and cross-hatches in its shadow.',
+                params: [{ key: 'spacing', label: 'Line spacing', def: 30 }, { key: 'angle', label: 'Line angle', def: 30, min: -90, max: 90, fmt: deg }, { key: 'relief', label: 'Relief', def: 60 }] },
+            // Type & craft
+            { id: 'contours', cat: 'Type & craft', label: 'Inlines & outlines', stage: 'shape', run: fxContours,
+                tip: 'Lines that follow the letter at exact distances, cut into it (inline) or echoing around it, or stacked as cut paper.',
+                params: [{ key: 'lines', label: 'Lines', def: 25, fmt: v => `${1 + Math.round(v / 100 * 11)}` }, { key: 'spacing', label: 'Spacing', def: 30 }, { key: 'side', label: 'Inside ↔ outside', def: 40, min: -100, max: 100, fmt: v => v < 0 ? `inside ${-v}` : v > 0 ? `outside ${v}` : 'both' }, { key: 'layers', label: 'Paper layers', def: 0, fmt: v => `${Math.round(v / 100 * 6)}` }],
+                margin: (p, ref) => ref * (0.008 + 0.05 * p.spacing / 100) * (2 + 12 * p.lines / 100 * Math.max(0, (p.side + 100) / 200) + 10 * p.layers / 100) + ref * 0.05 * p.layers / 100 },
+            { id: 'block', cat: 'Type & craft', label: 'Block shadow', stage: 'shape', opaque: true, run: fxBlock,
+                tip: 'Extruded, three-dimensional letters, or a long shadow that fades away.',
+                params: [{ key: 'depth', label: 'Depth', def: 30 }, { key: 'angle', label: 'Direction', def: 45, min: -180, max: 180, fmt: deg }, { key: 'fade', label: 'Solid ↔ fading', def: 0 }, { key: 'shade', label: 'Side shade', def: 55 }],
+                margin: (p, ref) => ref * (0.02 + 0.6 * p.depth / 100) },
+            { id: 'stencil', cat: 'Type & craft', label: 'Stencil & spray', stage: 'shape', run: fxStencil,
+                tip: 'Cut as a stencil, with a bridge wherever a counter would fall out, then sprayed through.',
+                params: [{ key: 'bridge', label: 'Bridge width', def: 35 }, { key: 'spray', label: 'Overspray', def: 45 }, { key: 'speckle', label: 'Speckle', def: 40 }],
+                margin: (p, ref) => ref * 0.14 * p.spray / 100 },
+            { id: 'stitch', cat: 'Type & craft', label: 'Cross-stitch', stage: 'shape', opaque: true, run: fxStitch,
+                tip: 'Rebuilt as cross-stitches of twisted, glossy thread, one per grid square the ink covers.',
+                params: [{ key: 'size', label: 'Stitch size', def: 30 }, { key: 'fill', label: 'Coverage', def: 50 }, { key: 'gloss', label: 'Thread sheen', def: 50 }] },
+            { id: 'mosaic', cat: 'Type & craft', label: 'Mosaic tiles', stage: 'shape', opaque: true, run: fxMosaic,
+                tip: 'Set in irregular tesserae with grout between them, each tile a slightly different shade.',
+                params: [{ key: 'size', label: 'Tile size', def: 30 }, { key: 'grout', label: 'Grout', def: 40 }, { key: 'jitter', label: 'Irregularity', def: 55 }] },
+            { id: 'typewriter', cat: 'Type & craft', label: 'Typewriter art', stage: 'shape', run: fxTypewriter,
+                tip: 'Redrawn in typed characters whose darkness matches the ink, with ribbon wear and overstrikes.',
+                params: [{ key: 'size', label: 'Type size', def: 25 }, { key: 'density', label: 'Contrast', def: 50 }, { key: 'jitter', label: 'Wobble', def: 40 }] },
+            { id: 'lines', cat: 'Type & craft', label: 'Schrofer line field', stage: 'shape', run: fxLineField,
+                tip: 'Op-art: a panel of parallel lines that bend and swell where the letters are, so the word exists only in the lines.',
+                params: [{ key: 'spacing', label: 'Line spacing', def: 30 }, { key: 'shift', label: 'Displacement', def: 55 }, { key: 'weight', label: 'Swell', def: 60 }, { key: 'angle', label: 'Angle', def: 0, min: -90, max: 90, fmt: deg }],
+                margin: (p, ref) => ref * 0.5 },
+            // Light & matter
+            { id: 'neon', cat: 'Light & matter', label: 'Neon tube', stage: 'shape', opaque: true, run: fxNeon,
+                tip: 'Bent glass tubes along each stroke’s centre line, glowing, with dead stretches that flicker out. Try a dark substrate.',
+                params: [{ key: 'tube', label: 'Tube width', def: 35 }, { key: 'glow', label: 'Glow', def: 60 }, { key: 'flicker', label: 'Dead stretches', def: 15 }],
+                margin: (p, ref) => ref * 0.35 * p.glow / 100 },
+            { id: 'ferro', cat: 'Light & matter', label: 'Ferrofluid', stage: 'shape', opaque: true, run: fxFerro,
+                tip: 'Magnetic fluid: evenly spaced spikes stand up along every edge, and a hexagonal ripple covers the surface.',
+                params: [{ key: 'spikes', label: 'Spike height', def: 45 }, { key: 'density', label: 'Spike density', def: 50 }, { key: 'gloss', label: 'Gloss', def: 70 }],
+                margin: (p, ref) => ref * (0.03 + 0.28 * p.spikes / 100) },
+            { id: 'scorch', cat: 'Light & matter', label: 'Scorch', stage: 'shape', run: fxScorch,
+                tip: 'Burnt into the sheet: charred letters, a ragged ring of embers, and a brown scorch fading out.',
+                params: [{ key: 'reach', label: 'Burn reach', def: 45 }, { key: 'char', label: 'Char', def: 60 }, { key: 'embers', label: 'Embers', def: 50 }],
+                margin: (p, ref) => ref * (0.04 + 0.4 * p.reach / 100) * 1.5 },
+            { id: 'spatter', cat: 'Light & matter', label: 'Ink spatter', stage: 'shape', run: fxSpatter,
+                tip: 'Drops flung off the letters: each lands stretched along its flight with a crown of spikes and a trail of satellites.',
+                params: [{ key: 'amount', label: 'Amount', def: 50 }, { key: 'spread', label: 'Spread', def: 40 }, { key: 'size', label: 'Drop size', def: 45 }],
+                margin: (p, ref) => ref * (0.15 + 1.4 * p.spread / 100) + ref * (0.02 + 0.09 * p.size / 100) * 6 },
+            // Nature & growth
+            { id: 'turing', cat: 'Nature & growth', label: 'Reaction–diffusion', stage: 'shape', run: fxTuring,
+                tip: 'Gray–Scott chemistry grown inside the letters: two chemicals feed and kill each other into coral, mazes, spots or worms. Takes a second or two to grow.',
+                params: [{ key: 'pattern', label: 'Pattern', def: 'maze', options: [['coral', 'Coral'], ['maze', 'Maze'], ['spots', 'Spots'], ['worms', 'Worms']] }, { key: 'scale', label: 'Scale', def: 25 }, { key: 'spill', label: 'Spill', def: 0 }, { key: 'outline', label: 'Outline', def: 60 }],
+                margin: (p, ref) => ref * 0.4 * p.spill / 100 },
+            { id: 'slime', cat: 'Nature & growth', label: 'Slime mould', stage: 'shape', run: fxSlime,
+                tip: 'Thousands of Physarum agents feed on the ink and lay trails, growing a vein network that links the letters. Takes a second or two to grow.',
+                params: [{ key: 'reach', label: 'Reach', def: 75 }, { key: 'agents', label: 'Swarm', def: 55 }, { key: 'veins', label: 'Vein weight', def: 60 }],
+                margin: (p, ref) => ref * 0.45 },
+            { id: 'frost', cat: 'Nature & growth', label: 'Frost', stage: 'shape', run: fxFrost,
+                tip: 'Ice crystals grow off the edges, branching at sixty degrees like window frost.',
+                params: [{ key: 'growth', label: 'Growth', def: 40 }, { key: 'density', label: 'Density', def: 45 }, { key: 'ice', label: 'Ice tint', def: 70 }],
+                margin: (p, ref) => ref * (0.06 + 0.45 * p.growth / 100) * 1.4 },
+            { id: 'fur', cat: 'Nature & growth', label: 'Fur', stage: 'shape', run: fxFur,
+                tip: 'A coat of hairs rooted in the ink, combed out at the edges and swirling where the curl takes them.',
+                params: [{ key: 'length', label: 'Length', def: 35 }, { key: 'density', label: 'Density', def: 60 }, { key: 'curl', label: 'Curl', def: 35 }],
+                margin: (p, ref) => ref * (0.03 + 0.3 * p.length / 100) }
+        ];
+        const fxMoreDefaults = () => Object.fromEntries(FX_MORE.map(E => [E.id, Object.assign({ on: false }, ...E.params.map(q => ({ [q.key]: q.def })))]));
+        const fxMoreOn = (r) => FX_MORE.some(E => r.more[E.id].on);
+        state.fx = fxEmpty();   // the live page's effects: { page, sets: { id: rec } }
+
+        // ---- Shared helpers ----
+        // The layer at a working resolution (pixel budget), with alpha and premultiplied colour
+        function fxWorkRes(src, C, budget) {
+            const q = Math.min(1, Math.sqrt(budget / (C.cw * C.ch)));
+            const fw = Math.max(1, Math.round(C.cw * q)), fh = Math.max(1, Math.round(C.ch * q)), n = fw * fh;
+            const c = fxCanvas(fw, fh), x = fx2d(c);
+            x.imageSmoothingQuality = 'high';
+            x.drawImage(src, 0, 0, fw, fh);
+            const img = x.getImageData(0, 0, fw, fh);
+            return { q, fw, fh, n, kq: C.k * q, img, P: fxPlanes(img.data, n) };
+        }
+        // The colour of the ink nearby, spread r px: unpremultiplied planes, `fallback` where there's none
+        function fxSpreadColour(P, w, h, r, fallback) {
+            const CA = boxBlur(P.A, w, h, r, 2), R = boxBlur(P.R, w, h, r, 2), G = boxBlur(P.G, w, h, r, 2), B = boxBlur(P.B, w, h, r, 2);
+            for (let i = 0; i < CA.length; i++) {
+                if (CA[i] > 1e-3) { R[i] /= CA[i]; G[i] /= CA[i]; B[i] /= CA[i]; }
+                else { R[i] = fallback[0]; G[i] = fallback[1]; B[i] = fallback[2]; }
+            }
+            return { R, G, B };
+        }
+        function fxMeanInk(items) {
+            let r = 0, g = 0, b = 0;
+            for (const it of items) { const c = hexToRgb(fxInk(it)); r += c.r; g += c.g; b += c.b; }
+            const n = items.length || 1;
+            return [r / n, g / n, b / n];
+        }
+        const fxIdx = (W, wx, wy) => Math.max(0, Math.min(W.fh - 1, Math.round(wy))) * W.fw + Math.max(0, Math.min(W.fw - 1, Math.round(wx)));
+        const fxRGB = (r, g, b, a = 1) => `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${a})`;
+
+        // The ink with wear's pinholes and hairline cracks closed (threshold at 0.5), so shape
+        // analysis sees letters, not every flake
+        const fxSolid = (W, ref) => boxBlur(W.P.A, W.fw, W.fh, Math.max(1, Math.round(ref * 0.012 * W.kq)), 2);
+
+        // Exact Euclidean distance transform (Felzenszwalb & Huttenlocher): for every pixel,
+        // the distance to the nearest pixel where seed[i] is set
+        function fxEDT(seed, w, h) {
+            const INF = 1e20, n = w * h, g = new Float64Array(n), len = Math.max(w, h);
+            const f = new Float64Array(len), d = new Float64Array(len), v = new Int32Array(len), z = new Float64Array(len + 1);
+            for (let i = 0; i < n; i++) g[i] = seed[i] ? 0 : INF;
+            const pass = (count) => {
+                let k = 0;
+                v[0] = 0; z[0] = -INF; z[1] = INF;
+                for (let q = 1; q < count; q++) {
+                    let s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+                    while (s <= z[k]) { k--; s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]); }
+                    k++; v[k] = q; z[k] = s; z[k + 1] = INF;
+                }
+                k = 0;
+                for (let q = 0; q < count; q++) {
+                    while (z[k + 1] < q) k++;
+                    const dq = q - v[k];
+                    d[q] = dq * dq + f[v[k]];
+                }
+            };
+            for (let x = 0; x < w; x++) {
+                for (let y = 0; y < h; y++) f[y] = g[y * w + x];
+                pass(h);
+                for (let y = 0; y < h; y++) g[y * w + x] = d[y];
+            }
+            for (let y = 0; y < h; y++) {
+                const o = y * w;
+                for (let x = 0; x < w; x++) f[x] = g[o + x];
+                pass(w);
+                for (let x = 0; x < w; x++) g[o + x] = d[x];
+            }
+            const out = new Float32Array(n);
+            for (let i = 0; i < n; i++) out[i] = Math.sqrt(g[i]);
+            return out;
+        }
+        // Signed distance to the ink's edge in px: negative inside, positive outside
+        function fxSDF(A, w, h) {
+            const n = w * h, ink = new Uint8Array(n), paper = new Uint8Array(n);
+            for (let i = 0; i < n; i++) { if (A[i] >= 0.5) ink[i] = 1; else paper[i] = 1; }
+            const out = fxEDT(ink, w, h), inn = fxEDT(paper, w, h), s = new Float32Array(n);
+            for (let i = 0; i < n; i++) s[i] = ink[i] ? 0.5 - inn[i] : out[i] - 0.5;
+            return s;
+        }
+        // A field (positive inside) as a crisp-edged layer: value ÷ slope ≈ distance to the edge,
+        // so after upscaling the edge is thresholded back to a pixel wide
+        function fxShapeCanvas(V, w, h, C, R, G, B) {
+            const img = new ImageData(w, h), d = img.data;
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const i = y * w + x;
+                    if (V[i] < -3) continue;
+                    const gx = (V[i + (x < w - 1 ? 1 : 0)] - V[i - (x > 0 ? 1 : 0)]) * 0.5, gy = (V[i + (y < h - 1 ? w : 0)] - V[i - (y > 0 ? w : 0)]) * 0.5;
+                    const a = Math.max(0, Math.min(1, 0.5 + 0.5 * V[i] / Math.max(1e-4, Math.hypot(gx, gy))));
+                    if (!a) continue;
+                    const q = i * 4;
+                    d[q] = R[i]; d[q + 1] = G[i]; d[q + 2] = B[i]; d[q + 3] = a * 255;
+                }
+            }
+            if (w === C.cw && h === C.ch) return fxImgCanvas(img);
+            const out = fxCanvas(C.cw, C.ch), ox = fx2d(out);
+            ox.imageSmoothingQuality = 'high';
+            ox.drawImage(fxImgCanvas(img), 0, 0, C.cw, C.ch);
+            const od = ox.getImageData(0, 0, C.cw, C.ch), o = od.data;
+            for (let i = 3; i < o.length; i += 4) o[i] = 255 * smooth(0.4, 0.6, o[i] / 255);
+            ox.putImageData(od, 0, 0);
+            return out;
+        }
+        function fxImgCanvas(img) {
+            const c = fxCanvas(img.width, img.height);
+            fx2d(c).putImageData(img, 0, 0);
+            return c;
+        }
+        // Soft (glows, washes, veins): just scale the work image up to the layer
+        function fxUpscale(img, C) {
+            const wc = fxImgCanvas(img);
+            if (img.width === C.cw && img.height === C.ch) return wc;
+            const out = fxCanvas(C.cw, C.ch), ox = fx2d(out);
+            ox.imageSmoothingQuality = 'high';
+            ox.drawImage(wc, 0, 0, C.cw, C.ch);
+            return out;
+        }
+        // Turn the layer so `angle` (screen radians) points along +x, let fn edit each row,
+        // then turn it back. Whole-pixel offsets keep a 0° turn lossless.
+        function fxAlongRows(src, C, angle, fn) {
+            const { cw, ch } = C, ca = Math.cos(angle), sa = Math.sin(angle);
+            const rw = Math.ceil(Math.abs(cw * ca) + Math.abs(ch * sa)) + 2, rh = Math.ceil(Math.abs(cw * sa) + Math.abs(ch * ca)) + 2;
+            const rot = fxCanvas(rw, rh), rx = fx2d(rot);
+            rx.translate(Math.floor(rw / 2), Math.floor(rh / 2));
+            rx.rotate(-angle);
+            rx.drawImage(src, -Math.floor(cw / 2), -Math.floor(ch / 2));
+            rx.setTransform(1, 0, 0, 1, 0, 0);
+            const img = rx.getImageData(0, 0, rw, rh);
+            fn(img.data, rw, rh);
+            rx.putImageData(img, 0, 0);
+            const out = fxCanvas(cw, ch), ox = fx2d(out);
+            ox.translate(Math.floor(cw / 2), Math.floor(ch / 2));
+            ox.rotate(angle);
+            ox.drawImage(rot, -Math.floor(rw / 2), -Math.floor(rh / 2));
+            return out;
+        }
+        // Outward unit normal of a blurred mask at work pixel (wx, wy), and how edge-like it is
+        function fxNormal(Ab, w, h, wx, wy) {
+            const gx = fxSampleField(Ab, w, h, wx + 1, wy) - fxSampleField(Ab, w, h, wx - 1, wy);
+            const gy = fxSampleField(Ab, w, h, wx, wy + 1) - fxSampleField(Ab, w, h, wx, wy - 1);
+            const l = Math.hypot(gx, gy) || 1e-6;
+            return [-gx / l, -gy / l, l];
+        }
+
+        // ---- 1. Halftone screen ----
+        // A rotated grid of cells; each cell's dot (or line) is sized so its area matches the ink
+        // coverage around the cell's centre, so soft edges turn into shrinking dots.
+        function fxHalftone(src, C, p) {
+            const { cw, ch, ref } = C, s = Math.max(2.5, ref * (0.012 + 0.09 * p.size / 100) * C.k);
+            const W = fxWorkRes(src, C, 1e6), r = Math.max(1, Math.round(s * 0.5 * W.q)), tone = (p.tone || 0) / 100, ink = new Float32Array(W.n);
+            for (let i = 0; i < W.n; i++) {   // coverage, optionally weighed by how dark the ink is
+                const a = W.P.A[i];
+                if (!a) continue;
+                const lum = (0.2126 * W.P.R[i] + 0.7152 * W.P.G[i] + 0.0722 * W.P.B[i]) / a / 255;
+                ink[i] = a * (1 - tone + tone * Math.min(1, (1 - lum) * 1.15));
+            }
+            const cov = boxBlur(ink, W.fw, W.fh, r, 2), col = fxSpreadColour(W.P, W.fw, W.fh, r, fxMeanInk(C.items));
+            const th = p.angle * Math.PI / 180, ca = Math.cos(th), sa = Math.sin(th), m = p.shape / 100, tint = Math.max(0.05, p.tint / 100);
+            const img = new ImageData(cw, ch), d = img.data;
+            for (let y = 0; y < ch; y++) {
+                for (let x = 0; x < cw; x++) {
+                    const u = (x * ca + y * sa) / s, v = (-x * sa + y * ca) / s, cu = Math.floor(u) + 0.5, cv = Math.floor(v) + 0.5;
+                    const wx = (cu * ca - cv * sa) * s * W.q - 0.5, wy = (cu * sa + cv * ca) * s * W.q - 0.5;
+                    const c = fxSampleField(cov, W.fw, W.fh, wx, wy) * tint;
+                    if (c < 0.02) continue;
+                    const du = (u - cu) * s, dv = (v - cv) * s, dist = Math.hypot(du * (1 - m), dv);
+                    const R = (1 - m) * s * 0.72 * Math.sqrt(c) + m * s * 0.5 * c;
+                    const a = Math.max(0, Math.min(1, R - dist + 0.5));
+                    if (!a) continue;
+                    const q = (y * cw + x) * 4, wi = fxIdx(W, wx, wy);
+                    d[q] = col.R[wi]; d[q + 1] = col.G[wi]; d[q + 2] = col.B[wi]; d[q + 3] = a * 255;
+                }
+            }
+            return fxImgCanvas(img);
+        }
+
+        // ---- 2. Riso misregistration ----
+        // The ink is separated into cyan, magenta and yellow plates; each plate lands slightly off
+        // and inks unevenly. Written for multiply: paper × (1 − a + a·C) = paper × (1 − plate).
+        function fxRiso(src, C, p) {
+            const { cw, ch, k, x0, y0, ref } = C, n = cw * ch, d = fx2d(src).getImageData(0, 0, cw, ch).data;
+            const plates = [new Float32Array(n), new Float32Array(n), new Float32Array(n)];
+            for (let i = 0; i < n; i++) {
+                const a = d[i * 4 + 3] / 255;
+                if (a) for (let c = 0; c < 3; c++) plates[c][i] = a * (1 - d[i * 4 + c] / 255);
+            }
+            const rng = mulberry32((C.seed ^ 0x5150) >>> 0), off = ref * 0.05 * p.offset / 100 * k;
+            const shift = [0, 1, 2].map(() => { const t = rng() * Math.PI * 2, r = off * (0.4 + 0.6 * rng()); return [Math.cos(t) * r, Math.sin(t) * r]; });
+            const T = getWearTiles(), grain = p.grain / 100, fade = p.fade / 100, fs = 8 / (ref * 0.8), cov = [0, 0, 0];
+            const img = new ImageData(cw, ch), o = img.data;
+            for (let y = 0; y < ch; y++) {
+                const py = y0 + (y + 0.5) / k;
+                for (let x = 0; x < cw; x++) {
+                    const px = x0 + (x + 0.5) / k;
+                    let any = 0;
+                    for (let c = 0; c < 3; c++) {
+                        let v = fxSampleField(plates[c], cw, ch, x - shift[c][0], y - shift[c][1]);
+                        if (v > 0.002) {
+                            // starved stencil specks, and broad uneven inking across the drum
+                            v *= 1 - grain * 0.65 * smooth(0.45, 0.85, tileSample(T.fine, px + c * 97, py + c * 41)) * (1.2 - v);
+                            v *= 1 - fade * 0.45 * tileSample(T.mid, px * fs + c * 53, py * fs + c * 29);
+                        }
+                        cov[c] = Math.max(0, v);
+                        if (cov[c] > any) any = cov[c];
+                    }
+                    if (any < 0.004) continue;
+                    const q = (y * cw + x) * 4;
+                    for (let c = 0; c < 3; c++) o[q + c] = 255 * (any - cov[c]) / any;
+                    o[q + 3] = any * 255;
+                }
+            }
+            return fxImgCanvas(img);
+        }
+
+        // ---- 3. Photocopy generations ----
+        // Copy, then copy the copy: every generation softens the image, re-thresholds it with a
+        // little toner noise (so strokes thicken or erode) and adds specks. A scratched drum may
+        // leave a streak.
+        function fxCopy(src, C, p) {
+            const W = fxWorkRes(src, C, C.quality === 'draft' ? 0.3e6 : 1.2e6), { fw, fh, n, kq } = W;
+            const gens = 1 + Math.round(p.copies / 100 * 11), bias = (p.dark - 50) / 50, toner = p.toner / 100;
+            const T = getWearTiles(), rng = mulberry32((C.seed ^ 0xc0b1) >>> 0), r = Math.max(1, Math.round(C.ref * 0.006 * kq));
+            let M = W.P.A;
+            for (let g = 0; g < gens; g++) {
+                const B = boxBlur(M, fw, fh, r, 2), ox = rng() * 512, oy = rng() * 512, t = 0.5 - bias * 0.12, N = new Float32Array(n);
+                for (let y = 0; y < fh; y++) {
+                    for (let x = 0; x < fw; x++) {
+                        const i = y * fw + x, nz = (tileSample(T.fine, x * 0.9 + ox, y * 0.9 + oy) - 0.5) * 0.22;
+                        let v = smooth(t - 0.1, t + 0.1, B[i] + nz);
+                        if (tileSample(T.pin, x * 1.3 + oy, y * 1.3 + ox) > 1 - toner * 0.01) v = 1;
+                        N[i] = v;
+                    }
+                }
+                M = N;
+            }
+            for (let s = Math.floor(toner * gens / 4 * rng()); s > 0; s--) {   // drum streaks
+                const x = Math.floor(rng() * fw), ph = rng() * 512;
+                for (let y = 0; y < fh; y++) if (tileSample(T.mid, x * 0.1 + ph, y * 0.15) > 0.45) M[y * fw + x] = Math.max(M[y * fw + x], 0.85);
+            }
+            const col = fxSpreadColour(W.P, fw, fh, Math.max(1, Math.round(C.ref * 0.05 * kq)), fxMeanInk(C.items));
+            const dk = Math.min(0.85, gens * 0.07), V = new Float32Array(n);   // copies drift toward toner black
+            for (let i = 0; i < n; i++) { col.R[i] *= 1 - dk; col.G[i] *= 1 - dk; col.B[i] *= 1 - dk; V[i] = M[i] - 0.5; }
+            return fxShapeCanvas(boxBlur(V, fw, fh, 1, 1), fw, fh, C, col.R, col.G, col.B);
+        }
+
+        // ---- 4. Wood type ----
+        // Growth rings run along the grain, bent around knots by slow noise. Ink fails on the
+        // hard late-wood bands where the block is worn, and open pores print as specks.
+        function fxWood(src, C, p) {
+            const { cw, ch, k, x0, y0, ref } = C, img = fx2d(src).getImageData(0, 0, cw, ch), d = img.data;
+            const T = getWearTiles(), th = p.angle * Math.PI / 180, ca = Math.cos(th), sa = Math.sin(th);
+            const sp = ref * (0.015 + 0.05 * p.grain / 100), wear = p.wear / 100, so = (C.seed % 997) * 3.1;
+            const fu = 8 / (ref * 1.8), fv = 8 / (ref * 0.35), pore = 2.8 / Math.max(1.5, ref * 0.008);
+            for (let y = 0; y < ch; y++) {
+                const py = y0 + (y + 0.5) / k;
+                for (let x = 0; x < cw; x++) {
+                    const q = (y * cw + x) * 4;
+                    if (!d[q + 3]) continue;
+                    const px = x0 + (x + 0.5) / k, u = px * ca + py * sa, v = -px * sa + py * ca;
+                    const phase = v / sp + 2.4 * (tileSample(T.mid, u * fu + so, v * fv) - 0.5) + 1.2 * (tileSample(T.coarse, u * fu * 0.5, v * fv * 0.5 + so) - 0.5);
+                    const late = smooth(0.55, 0.95, 0.5 + 0.5 * Math.sin(phase * Math.PI * 2));
+                    const pores = smooth(0.82 - 0.2 * wear, 0.95, tileSample(T.pin, u * pore * 0.3, v * pore));
+                    const patchy = smooth(0.25, 0.75, tileSample(T.mid, u * fu * 2.5, v * fv * 0.3 + 77));
+                    d[q + 3] *= Math.max(0, 1 - wear * (0.85 * late * patchy + 0.7 * pores));
+                    const dark = 1 - 0.16 * late;
+                    d[q] *= dark; d[q + 1] *= dark; d[q + 2] *= dark;
+                }
+            }
+            return fxImgCanvas(img);
+        }
+
+        // ---- 5. Engraving ----
+        // Each stroke becomes a dome (height rises with the distance in from its edge). Lit from
+        // the upper left, its shadowed slopes get thicker hatching and then a cross-hatch; a
+        // fine contour line holds the outline, as on a banknote.
+        function fxEngrave(src, C, p) {
+            const { cw, ch, k, x0, y0, ref } = C, W = fxWorkRes(src, C, 0.8e6), { fw, fh, n, kq } = W;
+            const S = fxSDF(fxSolid(W, ref), fw, fh), Rm = Math.max(2, ref * 0.07 * kq), Hh = new Float32Array(n);
+            for (let i = 0; i < n; i++) { const t = Math.min(1, Math.max(0, -S[i] / Rm)); Hh[i] = 1 - (1 - t) * (1 - t); }
+            const Hb = boxBlur(Hh, fw, fh, 1, 2), relief = p.relief / 100, D = new Float32Array(n);
+            const Lx = -0.55, Ly = -0.65, Lz = 0.52;
+            for (let y = 0; y < fh; y++) {
+                for (let x = 0; x < fw; x++) {
+                    const i = y * fw + x;
+                    if (S[i] > 1) continue;
+                    const gx = (Hb[i + (x < fw - 1 ? 1 : 0)] - Hb[i - (x > 0 ? 1 : 0)]) * Rm * 0.6, gy = (Hb[i + (y < fh - 1 ? fw : 0)] - Hb[i - (y > 0 ? fw : 0)]) * Rm * 0.6;
+                    const nl = Math.hypot(gx, gy, 1), lit = (-gx * Lx - gy * Ly + Lz) / nl / Lz;
+                    D[i] = Math.max(0.08, Math.min(1, 0.42 + relief * 0.75 * (1 - lit)));
+                }
+            }
+            const col = fxSpreadColour(W.P, fw, fh, Math.max(1, Math.round(ref * 0.02 * kq)), fxMeanInk(C.items));
+            const sp = ref * (0.01 + 0.045 * p.spacing / 100), th = p.angle * Math.PI / 180, th2 = th + 1.22;
+            const ca = Math.cos(th), sa = Math.sin(th), cb = Math.cos(th2), sb = Math.sin(th2), aa = 1 / (sp * k);
+            const img = new ImageData(cw, ch), d = img.data;
+            for (let y = 0; y < ch; y++) {
+                const py = y0 + (y + 0.5) / k, wy = (y + 0.5) * W.q - 0.5;
+                for (let x = 0; x < cw; x++) {
+                    const wx = (x + 0.5) * W.q - 0.5, s = fxSampleField(S, fw, fh, wx, wy);
+                    if (s > 1.2) continue;
+                    let a = 1 - smooth(0.25, 0.85, Math.abs(s));   // contour line
+                    if (s < 0.2) {
+                        const px = x0 + (x + 0.5) / k, dk = fxSampleField(D, fw, fh, wx, wy);
+                        const v1 = (-px * sa + py * ca) / sp, f1 = Math.abs(v1 - Math.round(v1));
+                        a = Math.max(a, Math.min(1, (0.46 * Math.pow(dk, 0.9) - f1) / aa + 0.5));
+                        if (dk > 0.6) {
+                            const v2 = (-px * sb + py * cb) / sp, f2 = Math.abs(v2 - Math.round(v2));
+                            a = Math.max(a, Math.min(1, ((dk - 0.6) / 0.4 * 0.36 - f2) / aa + 0.5));
+                        }
+                    }
+                    if (a <= 0) continue;
+                    const q = (y * cw + x) * 4, wi = fxIdx(W, wx, wy);
+                    d[q] = col.R[wi]; d[q + 1] = col.G[wi]; d[q + 2] = col.B[wi]; d[q + 3] = Math.min(1, a) * 255;
+                }
+            }
+            return fxImgCanvas(img);
+        }
+
+        // ---- 6. Inlines & outlines (and cut-paper layers) ----
+        // An exact signed distance to the letter's edge: lines at fixed distances are knocked
+        // out of the letter (inlines) or drawn around it (outlines). Paper layers stack offset
+        // silhouettes, lighter as they go out, each throwing a soft shadow.
+        function fxContours(src, C, p) {
+            const W = fxWorkRes(src, C, C.quality === 'draft' ? 0.4e6 : 1.6e6), { fw, fh, n, kq } = W, ref = C.ref;
+            const S = fxSDF(fxSolid(W, ref), fw, fh), nLines = 1 + Math.round(p.lines / 100 * 11);
+            const sp = Math.max(1.5, ref * (0.008 + 0.05 * p.spacing / 100) * kq), lw = Math.max(0.8, sp * 0.38);
+            const nOut = Math.round(nLines * (p.side + 100) / 200), nIn = nLines - nOut, L = Math.round(p.layers / 100 * 6);
+            const col = fxSpreadColour(W.P, fw, fh, Math.max(1, Math.round(sp * (nOut + L * 1.6 + 2))), fxMeanInk(C.items));
+            const img = new ImageData(fw, fh), d = img.data;
+            for (let i = 0; i < n; i++) {
+                const s = S[i];
+                let a;
+                if (s <= 0) {
+                    a = Math.min(1, 0.5 - s);
+                    for (let j = 0; j < nIn; j++) a *= smooth(lw * 0.5 - 0.6, lw * 0.5 + 0.6, Math.abs(s + (j + 0.5) * sp));
+                } else {
+                    a = Math.max(0, 0.5 - s);
+                    for (let j = 0; j < nOut; j++) a = Math.max(a, 1 - smooth(lw * 0.5 - 0.6, lw * 0.5 + 0.6, Math.abs(s - (j + 1) * sp)));
+                }
+                if (a <= 0) continue;
+                const q = i * 4;
+                d[q] = col.R[i]; d[q + 1] = col.G[i]; d[q + 2] = col.B[i]; d[q + 3] = a * 255;
+            }
+            const art = fxUpscale(img, C);
+            if (!L) return art;
+            const out = fxCanvas(C.cw, C.ch), ox = fx2d(out), shadow = (blur) => {
+                ox.shadowColor = 'rgba(20, 14, 8, 0.32)';
+                ox.shadowBlur = blur;
+                ox.shadowOffsetX = blur * 0.35;
+                ox.shadowOffsetY = blur * 0.6;
+            };
+            const lift = Math.max(1, ref * 0.03 * C.k);
+            for (let j = L; j >= 1; j--) {
+                const off = j * sp * 1.6 + (nOut + 0.5) * sp, mix = 0.18 + 0.62 * j / (L + 1), V = new Float32Array(n), R = new Float32Array(n), G = new Float32Array(n), B = new Float32Array(n);
+                for (let i = 0; i < n; i++) {
+                    V[i] = off - S[i];
+                    R[i] = col.R[i] + (255 - col.R[i]) * mix; G[i] = col.G[i] + (255 - col.G[i]) * mix; B[i] = col.B[i] + (255 - col.B[i]) * mix;
+                }
+                shadow(lift);
+                ox.drawImage(fxShapeCanvas(V, fw, fh, C, R, G, B), 0, 0);
+            }
+            shadow(lift);
+            ox.drawImage(art, 0, 0);
+            return out;
+        }
+
+        // ---- 7. Block shadow ----
+        // Turned so the extrusion runs along each row, every pixel behind a letter learns how far
+        // back it is and whose ink it belongs to: solid sides darkening with depth, or a long
+        // shadow fading out.
+        function fxBlock(src, C, p) {
+            const D = C.ref * (0.02 + 0.6 * p.depth / 100) * C.k, fade = p.fade / 100, shade = p.shade / 100;
+            return fxAlongRows(src, C, p.angle * Math.PI / 180, (d, rw, rh) => {
+                for (let y = 0; y < rh; y++) {
+                    let dist = 1e9, r = 0, g = 0, b = 0;
+                    for (let x = 0, q = y * rw * 4; x < rw; x++, q += 4) {
+                        const a = d[q + 3];
+                        if (a > 128) { dist = 0; r = d[q]; g = d[q + 1]; b = d[q + 2]; continue; }
+                        if (++dist > D) continue;
+                        const t = dist / D, sh = 1 - shade * (0.5 + 0.35 * t);
+                        const ea = (1 - fade) + fade * Math.pow(1 - t, 1.6), fa = a / 255, sa = ea * (1 - fa), na = fa + sa;
+                        if (na <= 0) continue;
+                        d[q] = (d[q] * fa + r * sh * sa) / na; d[q + 1] = (d[q + 1] * fa + g * sh * sa) / na; d[q + 2] = (d[q + 2] * fa + b * sh * sa) / na;
+                        d[q + 3] = na * 255;
+                    }
+                }
+            });
+        }
+
+        // ---- 8. Stencil & spray ----
+        // Paper regions completely enclosed by ink are counters, which would fall out of a cut
+        // stencil. Each gets a bridge cut above and below it, through to the paper outside; then
+        // the stencil is sprayed, with a soft overspray halo and flecks of paint.
+        function fxStencil(src, C, p) {
+            const W = fxWorkRes(src, C, C.quality === 'draft' ? 0.3e6 : 1.2e6), { fw, fh, n, kq } = W, ref = C.ref;
+            const ink = new Uint8Array(n), solid = fxSolid(W, ref);
+            for (let i = 0; i < n; i++) ink[i] = solid[i] >= 0.5 ? 1 : 0;
+            const label = new Int32Array(n).fill(-1), queue = new Int32Array(n), holes = [], minArea = Math.pow(ref * 0.03 * kq, 2);
+            for (let s = 0, id = 0; s < n; s++) {
+                if (ink[s] || label[s] >= 0) continue;
+                let head = 0, tail = 0, edge = false, minX = fw, maxX = -1, minY = fh, maxY = -1;
+                queue[tail++] = s;
+                label[s] = id;
+                while (head < tail) {
+                    const i = queue[head++], x = i % fw, y = (i / fw) | 0;
+                    if (x === 0 || y === 0 || x === fw - 1 || y === fh - 1) edge = true;
+                    if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y;
+                    if (x > 0 && !ink[i - 1] && label[i - 1] < 0) { label[i - 1] = id; queue[tail++] = i - 1; }
+                    if (x < fw - 1 && !ink[i + 1] && label[i + 1] < 0) { label[i + 1] = id; queue[tail++] = i + 1; }
+                    if (y > 0 && !ink[i - fw] && label[i - fw] < 0) { label[i - fw] = id; queue[tail++] = i - fw; }
+                    if (y < fh - 1 && !ink[i + fw] && label[i + fw] < 0) { label[i + fw] = id; queue[tail++] = i + fw; }
+                }
+                if (!edge && tail >= minArea) holes.push({ id, minX, maxX, minY, maxY });
+                id++;
+            }
+            const bw = Math.max(1, Math.round(ref * (0.012 + 0.06 * p.bridge / 100) * kq / 2));
+            for (const hl of holes) {
+                const cx = Math.round((hl.minX + hl.maxX) / 2);
+                for (let x = Math.max(0, cx - bw); x <= Math.min(fw - 1, cx + bw); x++) {
+                    let top = -1, bot = -1;
+                    for (let y = hl.minY; y <= hl.maxY; y++) if (label[y * fw + x] === hl.id) { if (top < 0) top = y; bot = y; }
+                    if (top < 0) continue;
+                    for (let y = top - 1; y >= 0 && ink[y * fw + x]; y--) ink[y * fw + x] = 0;
+                    for (let y = bot + 1; y < fh && ink[y * fw + x]; y++) ink[y * fw + x] = 0;
+                }
+            }
+            const cut = new Float32Array(n);
+            for (let i = 0; i < n; i++) cut[i] = ink[i];
+            const col = fxSpreadColour(W.P, fw, fh, Math.max(1, Math.round(ref * 0.08 * kq)), fxMeanInk(C.items));
+            const V = boxBlur(cut, fw, fh, 1, 1);
+            for (let i = 0; i < n; i++) V[i] -= 0.5;
+            const shape = fxShapeCanvas(V, fw, fh, C, col.R, col.G, col.B), spray = p.spray / 100, speck = p.speckle / 100;
+            if (spray <= 0.01 && speck <= 0.01) return shape;
+            const halo = boxBlur(cut, fw, fh, Math.max(1, Math.round(ref * 0.045 * kq)), 3), T = getWearTiles();
+            const img = new ImageData(fw, fh), d = img.data;
+            for (let y = 0; y < fh; y++) {
+                for (let x = 0; x < fw; x++) {
+                    const i = y * fw + x, h = halo[i] * (1 - cut[i]);
+                    if (h < 0.01) continue;
+                    let a = h * spray * 0.45;
+                    if (tileSample(T.pin, x * 1.7, y * 1.7) > 1 - speck * 0.25 * h) a = Math.max(a, 0.85);
+                    const q = i * 4;
+                    d[q] = col.R[i]; d[q + 1] = col.G[i]; d[q + 2] = col.B[i]; d[q + 3] = a * 255;
+                }
+            }
+            const out = fxUpscale(img, C);
+            fx2d(out).drawImage(shape, 0, 0);
+            return out;
+        }
+
+        // ---- 9. Cross-stitch ----
+        // A page-aligned grid; every square the ink covers gets an X of thread: the under-stitch,
+        // then the top-stitch, each with a shadow, a sheen and the slant of its twist.
+        function fxStitch(src, C, p) {
+            const { cw, ch, k, x0, y0, ref } = C, s = ref * (0.035 + 0.12 * p.size / 100);
+            const W = fxWorkRes(src, C, 0.6e6), r = Math.max(1, Math.round(s * 0.5 * W.kq));
+            const cov = boxBlur(W.P.A, W.fw, W.fh, r, 2), col = fxSpreadColour(W.P, W.fw, W.fh, r, fxMeanInk(C.items));
+            const out = fxCanvas(cw, ch), ctx = fx2d(out), rng = mulberry32((C.seed ^ 0x57) >>> 0);
+            const thr = 0.5 - 0.35 * p.fill / 100, gloss = p.gloss / 100, h = s * 0.4, lw = s * 0.3, detail = C.quality !== 'draft';
+            ctx.setTransform(k, 0, 0, k, -x0 * k, -y0 * k);
+            ctx.lineCap = 'round';
+            const line = (ax, ay, bx, by) => { ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke(); };
+            for (let j = Math.floor(y0 / s); j <= Math.ceil((y0 + C.h) / s); j++) {
+                for (let i = Math.floor(x0 / s); i <= Math.ceil((x0 + C.w) / s); i++) {
+                    const cx = (i + 0.5) * s, cy = (j + 0.5) * s, wx = (cx - x0) * W.kq - 0.5, wy = (cy - y0) * W.kq - 0.5;
+                    if (fxSampleField(cov, W.fw, W.fh, wx, wy) < thr) continue;
+                    const wi = fxIdx(W, wx, wy), vary = 0.88 + rng() * 0.24, R = col.R[wi] * vary, G = col.G[wi] * vary, B = col.B[wi] * vary;
+                    for (const [ax, ay, bx, by] of [[-h, h, h, -h], [-h, -h, h, h]]) {
+                        const x1 = cx + ax + (rng() - 0.5) * s * 0.05, y1 = cy + ay, x2 = cx + bx, y2 = cy + by + (rng() - 0.5) * s * 0.05;
+                        ctx.lineWidth = lw * 1.15;
+                        ctx.strokeStyle = fxRGB(R * 0.35, G * 0.35, B * 0.35, 0.45);
+                        line(x1 + s * 0.04, y1 + s * 0.05, x2 + s * 0.04, y2 + s * 0.05);
+                        ctx.lineWidth = lw;
+                        ctx.strokeStyle = fxRGB(R, G, B);
+                        line(x1, y1, x2, y2);
+                        if (!detail) continue;
+                        const dx = x2 - x1, dy = y2 - y1, l = Math.hypot(dx, dy), ux = dx / l, uy = dy / l;
+                        if (gloss > 0.01) {
+                            ctx.lineWidth = lw * 0.25;
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${0.4 * gloss})`;
+                            line(x1 + ux * lw * 0.6 - uy * lw * 0.15, y1 + uy * lw * 0.6 + ux * lw * 0.15, x2 - ux * lw * 0.6 - uy * lw * 0.15, y2 - uy * lw * 0.6 + ux * lw * 0.15);
+                        }
+                        ctx.lineWidth = lw * 0.1;   // the twist of the floss
+                        ctx.strokeStyle = fxRGB(R * 0.5, G * 0.5, B * 0.5, 0.45);
+                        for (const t of [0.3, 0.5, 0.7]) {
+                            const mx = x1 + dx * t, my = y1 + dy * t;
+                            line(mx - (ux * 0.5 - uy) * lw * 0.45, my - (uy * 0.5 + ux) * lw * 0.45, mx + (ux * 0.5 - uy) * lw * 0.45, my + (uy * 0.5 + ux) * lw * 0.45);
+                        }
+                    }
+                }
+            }
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            return out;
+        }
+
+        // ---- 10. Mosaic tiles ----
+        // Voronoi tesserae on a jittered, page-aligned grid: a tile is laid where its seed sits
+        // on ink, takes that ink's colour with its own tint, and is bevelled toward the light.
+        function fxMosaic(src, C, p) {
+            const W = fxWorkRes(src, C, C.quality === 'draft' ? 0.3e6 : 1.2e6), { fw, fh, kq } = W, { x0, y0, ref } = C;
+            const sp = ref * (0.03 + 0.14 * p.size / 100), s = sp * kq, jit = 0.15 + 0.8 * p.jitter / 100, grout = Math.max(0.6, s * (0.03 + 0.12 * p.grout / 100));
+            const cov = boxBlur(W.P.A, fw, fh, Math.max(1, Math.round(s * 0.3)), 2), col = fxSpreadColour(W.P, fw, fh, Math.max(1, Math.round(s * 0.5)), fxMeanInk(C.items));
+            const seed = (i, j) => [(i + 0.5 + (hash2(i, j, 7) - 0.5) * jit) * sp, (j + 0.5 + (hash2(i, j, 8) - 0.5) * jit) * sp];
+            const img = new ImageData(fw, fh), d = img.data;
+            for (let y = 0; y < fh; y++) {
+                const py = y0 + (y + 0.5) / kq, j0 = Math.floor(py / sp);
+                for (let x = 0; x < fw; x++) {
+                    const px = x0 + (x + 0.5) / kq, i0 = Math.floor(px / sp);
+                    let d1 = Infinity, d2 = Infinity, bi = 0, bj = 0, bx = 0, by = 0;
+                    for (let dj = -1; dj <= 1; dj++) {
+                        for (let di = -1; di <= 1; di++) {
+                            const [sx, sy] = seed(i0 + di, j0 + dj), dd = Math.hypot(px - sx, py - sy);
+                            if (dd < d1) { d2 = d1; d1 = dd; bi = i0 + di; bj = j0 + dj; bx = sx; by = sy; } else if (dd < d2) d2 = dd;
+                        }
+                    }
+                    const wx = (bx - x0) * kq - 0.5, wy = (by - y0) * kq - 0.5;
+                    if (fxSampleField(cov, fw, fh, wx, wy) < 0.45) continue;
+                    const edge = (d2 - d1) / 2 * kq, a = smooth(grout - 0.6, grout + 0.6, edge);
+                    if (!a) continue;
+                    const wi = fxIdx(W, wx, wy), tint = 0.86 + 0.28 * hash2(bi, bj, 9);
+                    const ox = (px - bx) / sp, oy = (py - by) / sp, bevel = 1 + 0.35 * (-ox * 0.7 - oy * 0.7) - 0.18 * (1 - smooth(0, s * 0.18, edge));
+                    const q = (y * fw + x) * 4, f = tint * bevel;
+                    d[q] = col.R[wi] * f + 18 * (f - 1); d[q + 1] = col.G[wi] * f + 18 * (f - 1); d[q + 2] = col.B[wi] * f + 18 * (f - 1); d[q + 3] = a * 255;
+                }
+            }
+            return fxUpscale(img, C);
+        }
+
+        // ---- 11. Typewriter art ----
+        // A page-aligned grid of character cells; each cell's ink coverage picks a character from
+        // a darkness ramp. The ribbon inks unevenly, keys strike a little off, and the darkest
+        // cells are struck twice.
+        const FX_RAMP = ' .,:;-~=+ox*%#&@M';
+        function fxTypewriter(src, C, p) {
+            const { cw, ch, k, x0, y0, ref } = C, sz = ref * (0.05 + 0.16 * p.size / 100), cwid = sz * 0.6;
+            const W = fxWorkRes(src, C, 0.6e6), r = Math.max(1, Math.round(sz * 0.4 * W.kq));
+            const cov = boxBlur(W.P.A, W.fw, W.fh, r, 2), col = fxSpreadColour(W.P, W.fw, W.fh, r, fxMeanInk(C.items));
+            const gamma = 1.6 - 1.2 * p.density / 100, jit = p.jitter / 100, rng = mulberry32((C.seed ^ 0x7e) >>> 0);
+            const out = fxCanvas(cw, ch), ctx = fx2d(out);
+            ctx.font = `700 ${sz}px "Courier Prime", "Courier New", monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            for (let j = Math.floor(y0 / sz); j <= Math.ceil((y0 + C.h) / sz); j++) {
+                for (let i = Math.floor(x0 / cwid); i <= Math.ceil((x0 + C.w) / cwid); i++) {
+                    const cx = (i + 0.5) * cwid, cy = (j + 0.5) * sz, wx = (cx - x0) * W.kq - 0.5, wy = (cy - y0) * W.kq - 0.5;
+                    const c = fxSampleField(cov, W.fw, W.fh, wx, wy), idx = Math.round(Math.pow(c, gamma) * (FX_RAMP.length - 1));
+                    if (idx <= 0) continue;
+                    const wi = fxIdx(W, wx, wy), rot = (rng() - 0.5) * jit * 0.1, cs = Math.cos(rot) * k, sn = Math.sin(rot) * k;
+                    ctx.fillStyle = fxRGB(col.R[wi], col.G[wi], col.B[wi]);
+                    ctx.globalAlpha = 0.55 + 0.45 * rng();
+                    ctx.setTransform(cs, sn, -sn, cs, (cx + (rng() - 0.5) * jit * sz * 0.12 - x0) * k, (cy + (rng() - 0.5) * jit * sz * 0.12 - y0) * k);
+                    ctx.fillText(FX_RAMP[idx], 0, 0);
+                    if (c > 0.85 && rng() < 0.5) { ctx.globalAlpha *= 0.6; ctx.fillText(FX_RAMP[idx], sz * 0.04, sz * 0.02); }
+                }
+            }
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.globalAlpha = 1;
+            return out;
+        }
+
+        // ---- 12. Schrofer line field ----
+        // Parallel lines across a panel around the word. Where the letters are, the lines are
+        // pushed sideways (by the blurred ink) and swell (by the sharper ink), so the word is
+        // drawn only by bending and thickening lines.
+        function fxLineField(src, C, p) {
+            const { cw, ch, k, x0, y0, ref, B } = C, W = fxWorkRes(src, C, 0.8e6), { fw, fh, kq } = W;
+            const sp = ref * (0.014 + 0.06 * p.spacing / 100), amp = sp * 4 * p.shift / 100, weight = p.weight / 100;
+            const th = p.angle * Math.PI / 180, ca = Math.cos(th), sa = Math.sin(th);
+            const F = boxBlur(W.P.A, fw, fh, Math.max(1, Math.round(sp * 1.2 * kq)), 3), Fs = boxBlur(W.P.A, fw, fh, Math.max(1, Math.round(sp * 0.3 * kq)), 2);
+            const col = fxSpreadColour(W.P, fw, fh, Math.max(1, Math.round(sp * 3 * kq)), fxMeanInk(C.items));
+            const m = ref * 0.45, px0 = B.x0 - m, py0 = B.y0 - m, px1 = B.x1 + m, py1 = B.y1 + m;
+            const img = new ImageData(cw, ch), d = img.data;
+            for (let y = 0; y < ch; y++) {
+                const py = y0 + (y + 0.5) / k, wy = (y + 0.5) * W.q - 0.5;
+                if (py < py0 || py > py1) continue;
+                for (let x = 0; x < cw; x++) {
+                    const px = x0 + (x + 0.5) / k;
+                    if (px < px0 || px > px1) continue;
+                    const wx = (x + 0.5) * W.q - 0.5, f = fxSampleField(F, fw, fh, wx, wy), fs = fxSampleField(Fs, fw, fh, wx, wy);
+                    const v = (-px * sa + py * ca + amp * f) / sp, dl = Math.abs(v - Math.round(v)) * sp;
+                    const hw = sp * (0.1 + 0.36 * weight * Math.min(1, fs * 1.4)), a = Math.max(0, Math.min(1, (hw - dl) * k + 0.5));
+                    if (!a) continue;
+                    const q = (y * cw + x) * 4, wi = fxIdx(W, wx, wy);
+                    d[q] = col.R[wi]; d[q + 1] = col.G[wi]; d[q + 2] = col.B[wi]; d[q + 3] = a * 255;
+                }
+            }
+            return fxImgCanvas(img);
+        }
+
+        // ---- 13. Neon tube ----
+        // Zhang–Suen thinning peels each stroke down to its centre line; the distance to that
+        // line shapes a glass tube with a white-hot core and a coloured glow. Black ink burns
+        // white; stretches where the gas has failed sit dark.
+        function fxThin(M, w, h) {
+            const del = [];
+            for (let changed = true; changed;) {
+                changed = false;
+                for (let pass = 0; pass < 2; pass++) {
+                    del.length = 0;
+                    for (let y = 1; y < h - 1; y++) {
+                        for (let x = 1; x < w - 1; x++) {
+                            const i = y * w + x;
+                            if (!M[i]) continue;
+                            const p2 = M[i - w], p3 = M[i - w + 1], p4 = M[i + 1], p5 = M[i + w + 1], p6 = M[i + w], p7 = M[i + w - 1], p8 = M[i - 1], p9 = M[i - w - 1];
+                            const nb = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
+                            if (nb < 2 || nb > 6) continue;
+                            const tr = (!p2 && p3 ? 1 : 0) + (!p3 && p4 ? 1 : 0) + (!p4 && p5 ? 1 : 0) + (!p5 && p6 ? 1 : 0) + (!p6 && p7 ? 1 : 0) + (!p7 && p8 ? 1 : 0) + (!p8 && p9 ? 1 : 0) + (!p9 && p2 ? 1 : 0);
+                            if (tr !== 1) continue;
+                            if (pass === 0 ? (p2 && p4 && p6) || (p4 && p6 && p8) : (p2 && p4 && p8) || (p2 && p6 && p8)) continue;
+                            del.push(i);
+                        }
+                    }
+                    for (const i of del) M[i] = 0;
+                    if (del.length) changed = true;
+                }
+            }
+            return M;
+        }
+        function fxNeon(src, C, p) {
+            const W = fxWorkRes(src, C, C.quality === 'draft' ? 0.15e6 : 0.5e6), { fw, fh, n, kq } = W, ref = C.ref;
+            const M = new Uint8Array(n), solid = fxSolid(W, ref);
+            for (let i = 0; i < n; i++) M[i] = solid[i] >= 0.5 ? 1 : 0;
+            const dS = fxEDT(fxThin(M, fw, fh), fw, fh);
+            const col = fxSpreadColour(W.P, fw, fh, Math.max(1, Math.round(ref * 0.03 * kq)), fxMeanInk(C.items));
+            const tubeR = Math.max(1, ref * (0.008 + 0.035 * p.tube / 100) * kq), glowR = ref * 0.09 * kq, glow = p.glow / 100, flick = p.flicker / 100;
+            const T = getWearTiles(), fs = 8 / (ref * 0.5), img = new ImageData(fw, fh), d = img.data;
+            for (let y = 0; y < fh; y++) {
+                const py = C.y0 + (y + 0.5) / kq;
+                for (let x = 0; x < fw; x++) {
+                    const i = y * fw + x, s = dS[i];
+                    if (s > glowR * 5) continue;
+                    const lit = tileSample(T.coarse, (C.x0 + (x + 0.5) / kq) * fs, py * fs) > flick * 0.6;
+                    const mx = Math.max(col.R[i], col.G[i], col.B[i], 1);
+                    let r = col.R[i] / mx * 255, g = col.G[i] / mx * 255, b = col.B[i] / mx * 255;
+                    if (!lit) { r = r * 0.3 + 70; g = g * 0.3 + 70; b = b * 0.3 + 75; }   // unlit glass
+                    const body = 1 - smooth(tubeR * 0.75, tubeR * 1.05, s), core = lit ? (1 - smooth(0, tubeR * 0.55, s)) * 0.85 : 0;
+                    const halo = lit ? glow * Math.exp(-s / glowR) * 0.85 : 0, a = Math.max(body * (lit ? 1 : 0.6), halo);
+                    if (a < 0.004) continue;
+                    const q = i * 4;
+                    d[q] = r + (255 - r) * core; d[q + 1] = g + (255 - g) * core; d[q + 2] = b + (255 - b) * core; d[q + 3] = a * 255;
+                }
+            }
+            return fxUpscale(img, C);
+        }
+
+        // ---- 14. Ferrofluid ----
+        // Spike roots are dart-thrown along the edge so they keep an even spacing (blue noise);
+        // each grows a sharp cone along the outward normal. A hexagonal ripple, the sum of three
+        // waves 120° apart, covers the surface, and strong specular light makes it read as wet
+        // magnetic fluid.
+        function fxFerro(src, C, p) {
+            const W = fxWorkRes(src, C, C.quality === 'draft' ? 0.25e6 : 0.8e6), { fw, fh, n, kq } = W, ref = C.ref;
+            const Ab = boxBlur(W.P.A, fw, fh, Math.max(1, Math.round(ref * 0.015 * kq)), 2);
+            const H = ref * (0.03 + 0.28 * p.spikes / 100) * kq, sp = ref * (0.035 + 0.09 * (1 - p.density / 100)) * kq, gloss = p.gloss / 100;
+            const rng = mulberry32((C.seed ^ 0xfe77) >>> 0), edges = [];
+            for (let i = 0; i < n; i++) if (Ab[i] > 0.42 && Ab[i] < 0.58) edges.push(i);
+            for (let i = edges.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [edges[i], edges[j]] = [edges[j], edges[i]]; }
+            const gs = Math.max(1, sp), gw = Math.ceil(fw / gs) + 1, grid = new Map(), roots = [];
+            for (const i of edges) {
+                const x = i % fw, y = (i / fw) | 0, gx = Math.floor(x / gs), gy = Math.floor(y / gs);
+                let ok = true;
+                for (let dy = -1; dy <= 1 && ok; dy++) for (let dx = -1; dx <= 1 && ok; dx++) {
+                    const o = grid.get((gy + dy) * gw + gx + dx);
+                    if (o && Math.hypot(o[0] - x, o[1] - y) < sp) ok = false;
+                }
+                if (!ok) continue;
+                grid.set(gy * gw + gx, [x, y]);
+                roots.push([x, y]);
+            }
+            const V = new Float32Array(n);
+            for (let i = 0; i < n; i++) V[i] = (Ab[i] - 0.45) * 6;
+            for (const [rx, ry] of roots) {
+                const [nx, ny] = fxNormal(Ab, fw, fh, rx, ry), h = H * (0.6 + 0.4 * rng()), base = sp * 0.5;
+                const bx0 = Math.max(0, Math.floor(Math.min(rx, rx + nx * h) - base - 1)), bx1 = Math.min(fw - 1, Math.ceil(Math.max(rx, rx + nx * h) + base + 1));
+                const by0 = Math.max(0, Math.floor(Math.min(ry, ry + ny * h) - base - 1)), by1 = Math.min(fh - 1, Math.ceil(Math.max(ry, ry + ny * h) + base + 1));
+                for (let y = by0; y <= by1; y++) {
+                    for (let x = bx0; x <= bx1; x++) {
+                        const dx = x - rx, dy = y - ry, along = dx * nx + dy * ny, across = Math.abs(dx * ny - dy * nx);
+                        if (along < -base || along > h) continue;
+                        const width = base * Math.pow(1 - Math.max(0, along) / h, 1.3), i = y * fw + x;
+                        V[i] = Math.max(V[i], (width - across) * 0.6);
+                    }
+                }
+            }
+            // light it: height from the shape plus the hexagonal ripple inside
+            const shape = new Float32Array(n);
+            for (let i = 0; i < n; i++) shape[i] = V[i] > 0 ? 1 : 0;
+            const Hh = boxBlur(shape, fw, fh, Math.max(1, Math.round(sp * 0.2)), 2), wl = sp * 0.9, K = Math.PI * 2 / wl;
+            const R = new Float32Array(n), G = new Float32Array(n), B = new Float32Array(n), mean = fxMeanInk(C.items);
+            const Lx = -0.45, Ly = -0.6, Lz = 0.66, hl = Math.hypot(Lx, Ly, Lz + 1), hx = Lx / hl, hy = Ly / hl, hz = (Lz + 1) / hl;
+            const hex = (x, y) => (Math.cos(K * x) + Math.cos(K * (x * 0.5 + y * 0.866)) + Math.cos(K * (-x * 0.5 + y * 0.866))) / 3;
+            for (let y = 0; y < fh; y++) {
+                for (let x = 0; x < fw; x++) {
+                    const i = y * fw + x;
+                    if (V[i] < -3) continue;
+                    const inner = smooth(0.6, 0.95, Ab[i]) * 0.22;
+                    const hgt = (xx, yy) => fxSampleField(Hh, fw, fh, xx, yy) + inner * hex(xx, yy);
+                    const gx = (hgt(x + 1, y) - hgt(x - 1, y)) * sp * 0.5, gy = (hgt(x, y + 1) - hgt(x, y - 1)) * sp * 0.5;
+                    const nl = Math.hypot(gx, gy, 1), nx = -gx / nl, ny = -gy / nl, nz = 1 / nl;
+                    const diff = Math.max(0, nx * Lx + ny * Ly + nz * Lz), spec = Math.pow(Math.max(0, nx * hx + ny * hy + nz * hz), 40 + 80 * gloss) * (0.4 + 1.6 * gloss);
+                    const base = 0.25 + 0.55 * diff, sh = Math.min(1, spec) * 255;
+                    R[i] = mean[0] * 0.25 * base + 8 + sh; G[i] = mean[1] * 0.25 * base + 8 + sh; B[i] = mean[2] * 0.25 * base + 10 + sh;
+                }
+            }
+            return fxShapeCanvas(V, fw, fh, C, R, G, B);
+        }
+
+        // ---- 15. Scorch ----
+        // The exact distance from the ink, roughened by noise, runs through a burn ramp:
+        // charred paper, a thin ring of embers, then a brown scorch fading into clean paper.
+        function fxScorch(src, C, p) {
+            const W = fxWorkRes(src, C, 0.8e6), { fw, fh, n, kq } = W, ref = C.ref;
+            const ink = new Uint8Array(n);
+            for (let i = 0; i < n; i++) ink[i] = W.P.A[i] >= 0.5 ? 1 : 0;
+            const dOut = fxEDT(ink, fw, fh), reach = ref * (0.04 + 0.4 * p.reach / 100) * kq, char = p.char / 100, embers = p.embers / 100;
+            const T = getWearTiles(), f1 = 8 / (ref * 0.35), f2 = 2.2 / (ref * 0.04), img = new ImageData(fw, fh), d = img.data;
+            const put = (q, r, g, b, a) => { d[q] = r; d[q + 1] = g; d[q + 2] = b; d[q + 3] = a * 255; };
+            for (let y = 0; y < fh; y++) {
+                const py = C.y0 + (y + 0.5) / kq;
+                for (let x = 0; x < fw; x++) {
+                    const i = y * fw + x, q = i * 4;
+                    if (ink[i]) continue;
+                    const px = C.x0 + (x + 0.5) / kq;
+                    const t = (dOut[i] + (tileSample(T.mid, px * f1, py * f1) - 0.5) * reach * 0.8 + (tileSample(T.fine, px * f2, py * f2) - 0.5) * reach * 0.15) / reach;
+                    if (t > 1) continue;
+                    if (t < 0.18) put(q, 34, 22, 13, 0.55 + 0.4 * char);
+                    else {
+                        const ember = embers * Math.max(0, 1 - Math.abs(t - 0.22) / 0.045);
+                        const sc = 0.85 * Math.pow(1 - smooth(0.18, 1, t), 1.3), u = (t - 0.18) / 0.82;
+                        if (ember > sc) put(q, 255, 128, 36, Math.min(1, ember));
+                        else put(q, 95 + 75 * u, 55 + 65 * u, 25 + 45 * u, sc);
+                    }
+                }
+            }
+            const out = fxUpscale(img, C), letters = fxCanvas(C.cw, C.ch), lx = fx2d(letters), ox = fx2d(out);
+            lx.drawImage(src, 0, 0);
+            lx.globalCompositeOperation = 'source-atop';   // charred ink
+            lx.fillStyle = `rgba(16, 10, 6, ${0.75 * char})`;
+            lx.fillRect(0, 0, C.cw, C.ch);
+            ox.drawImage(letters, 0, 0);
+            return out;
+        }
+
+        // ---- 16. Ink spatter ----
+        // Drops flung off each letter: every one lands stretched along its flight, throws a crown
+        // of spikes (longest on the leading side) and leaves satellites that shrink as they go.
+        function fxSplat(ctx, rng, x, y, r, dir) {
+            const ca = Math.cos(dir), sa = Math.sin(dir), stretch = 1 + rng() * 0.6, at = (lx, ly) => [x + lx * ca - ly * sa, y + lx * sa + ly * ca];
+            ctx.beginPath();
+            for (let i = 0; i <= 28; i++) {
+                const t = i / 28 * Math.PI * 2, wob = 1 + (rng() - 0.5) * 0.25, [px, py] = at(Math.cos(t) * r * stretch * wob, Math.sin(t) * r * wob);
+                if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fill();
+            for (let s = 5 + Math.floor(rng() * 10); s > 0; s--) {
+                const a = rng() * Math.PI * 2, len = r * (0.4 + rng() * (1 + Math.max(0, Math.cos(a)) * 1.6)), w = 0.12 + rng() * 0.12;
+                const [b1x, b1y] = at(Math.cos(a - w) * r * stretch * 0.9, Math.sin(a - w) * r * 0.9), [b2x, b2y] = at(Math.cos(a + w) * r * stretch * 0.9, Math.sin(a + w) * r * 0.9);
+                const [tx, ty] = at(Math.cos(a) * (r * stretch + len), Math.sin(a) * (r + len));
+                ctx.beginPath();
+                ctx.moveTo(b1x, b1y); ctx.lineTo(tx, ty); ctx.lineTo(b2x, b2y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(tx, ty, r * 0.08 + rng() * r * 0.08, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            let dist = r * stretch * 1.6, sr = r * 0.45;
+            for (let s = Math.floor(rng() * 6); s > 0; s--) {
+                dist += sr * (2 + rng() * 3);
+                sr *= 0.6 + rng() * 0.25;
+                const [cx, cy] = at(dist, (rng() - 0.5) * r * 0.6);
+                ctx.beginPath();
+                ctx.ellipse(cx, cy, sr * 1.6, sr, dir, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        function fxSpatter(src, C, p) {
+            const { k, x0, y0, ref, items } = C, out = fxCanvas(C.cw, C.ch), ctx = fx2d(out);
+            const amt = p.amount / 100, spread = ref * (0.15 + 1.4 * p.spread / 100), size = ref * (0.02 + 0.09 * p.size / 100);
+            ctx.drawImage(src, 0, 0);
+            ctx.setTransform(k, 0, 0, k, -x0 * k, -y0 * k);
+            for (const it of items) {
+                const rng = mulberry32(((it.seed * 40503) ^ 0x5a7) >>> 0 || 1), b = selectionBounds([it]);
+                ctx.fillStyle = fxInk(it);
+                for (let s = Math.round(amt * (3 + 9 * rng())); s > 0; s--) {
+                    const ox = b.x0 + rng() * (b.x1 - b.x0), oy = b.y0 + rng() * (b.y1 - b.y0), dir = rng() * Math.PI * 2, dist = spread * Math.pow(rng(), 0.7);
+                    fxSplat(ctx, rng, ox + Math.cos(dir) * dist, oy + Math.sin(dir) * dist, size * (0.3 + Math.pow(rng(), 2) * 1.7), dir);
+                }
+            }
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            return out;
+        }
+
+        // ---- 17. Reaction–diffusion ----
+        // Gray–Scott: chemical U feeds V (U + 2V → 3V) while both diffuse, U is replenished and
+        // V decays. Seeded inside the letters and confined to them, it settles into coral,
+        // mazes, spots or worms depending on the feed and kill rates.
+        const FX_RD = { coral: [0.0545, 0.062], maze: [0.029, 0.057], spots: [0.035, 0.065], worms: [0.078, 0.061] };
+        function fxTuring(src, C, p) {
+            const ref = C.ref, feature = ref * (0.025 + 0.1 * p.scale / 100), spill = p.spill / 100;
+            // the budget is spent where the pattern can live: cells on or near the ink
+            const probe = fxCanvas(160, Math.max(1, Math.round(160 * C.h / C.w))), px = fx2d(probe);
+            px.drawImage(src, 0, 0, probe.width, probe.height);
+            const pd = px.getImageData(0, 0, probe.width, probe.height).data;
+            let inked = 0;
+            for (let i = 3; i < pd.length; i += 4) if (pd[i] > 60) inked++;
+            const share = Math.min(1, inked / (pd.length / 4) * (1.6 + 3 * spill) + 0.02);
+            const cell = Math.max(feature / 7, Math.sqrt(C.w * C.h * share / (C.quality === 'draft' ? 15e3 : 70e3)));
+            const gw = Math.max(8, Math.round(C.w / cell)), gh = Math.max(8, Math.round(C.h / cell)), n = gw * gh;
+            const mc = fxCanvas(gw, gh), mx = fx2d(mc);
+            mx.imageSmoothingQuality = 'high';
+            mx.drawImage(src, 0, 0, gw, gh);
+            const P = fxPlanes(mx.getImageData(0, 0, gw, gh).data, n), M = boxBlur(P.A, gw, gh, 1, 1);
+            const [F, K] = FX_RD[p.pattern] || FX_RD.coral, keep = new Float32Array(n);
+            let U = new Float32Array(n).fill(1), V = new Float32Array(n), U2 = new Float32Array(n).fill(1), V2 = new Float32Array(n);
+            const rng = mulberry32((C.seed ^ 0x7d) >>> 0), active = [];
+            const near = boxBlur(M, gw, gh, 2 + Math.round(spill * 8), 1);
+            for (let y = 1; y < gh - 1; y++) for (let x = 1; x < gw - 1; x++) {
+                const i = y * gw + x;
+                keep[i] = Math.min(1, M[i] * 1.25 + spill);
+                if (near[i] > 0.02) active.push(i);
+            }
+            // seed small patches of V (lone cells just diffuse away) scattered through the ink
+            for (const i of active) {
+                if (M[i] < 0.5 || rng() > 0.05) continue;
+                for (const o of [0, -1, 1, -gw, gw, -gw - 1, -gw + 1, gw - 1, gw + 1]) { U[i + o] = 0.5; V[i + o] = 0.25 + rng() * 0.1; }
+            }
+            const idx = Int32Array.from(active);
+            for (let step = C.quality === 'draft' ? 150 : 600; step > 0; step--) {
+                for (let t = 0; t < idx.length; t++) {
+                    const i = idx[t], u = U[i], v = V[i];
+                    const lu = 0.2 * (U[i - gw] + U[i + gw] + U[i - 1] + U[i + 1]) + 0.05 * (U[i - gw - 1] + U[i - gw + 1] + U[i + gw - 1] + U[i + gw + 1]) - u;
+                    const lv = 0.2 * (V[i - gw] + V[i + gw] + V[i - 1] + V[i + 1]) + 0.05 * (V[i - gw - 1] + V[i - gw + 1] + V[i + gw - 1] + V[i + gw + 1]) - v;
+                    const uvv = u * v * v;
+                    U2[i] = u + lu - uvv + F * (1 - u);
+                    V2[i] = (v + 0.5 * lv + uvv - (F + K) * v) * keep[i];
+                }
+                [U, U2] = [U2, U];
+                [V, V2] = [V2, V];
+            }
+            const outline = p.outline / 100, Vs = new Float32Array(n);
+            for (let i = 0; i < n; i++) Vs[i] = Math.max((V[i] - 0.2) * 4, outline * (0.22 - Math.abs(M[i] - 0.5) * 1.4));
+            const col = fxSpreadColour(P, gw, gh, 2, fxMeanInk(C.items));
+            return fxShapeCanvas(Vs, gw, gh, C, col.R, col.G, col.B);
+        }
+
+        // ---- 18. Slime mould ----
+        // Physarum: agents sense ahead, left and right, turn toward the strongest trail (and the
+        // ink, which is food), step and deposit; the trail map spreads and evaporates each
+        // step. The swarm settles into a network of veins between the letters.
+        function fxSlime(src, C, p) {
+            const cell = Math.max(C.ref * 0.008, Math.sqrt(C.w * C.h / (C.quality === 'draft' ? 25e3 : 90e3)));
+            const gw = Math.max(8, Math.round(C.w / cell)), gh = Math.max(8, Math.round(C.h / cell)), n = gw * gh;
+            const mc = fxCanvas(gw, gh), mx = fx2d(mc);
+            mx.imageSmoothingQuality = 'high';
+            mx.drawImage(src, 0, 0, gw, gh);
+            const P = fxPlanes(mx.getImageData(0, 0, gw, gh).data, n), M = P.A;
+            const NA = 64, COS = new Float32Array(NA), SIN = new Float32Array(NA);
+            for (let a = 0; a < NA; a++) { COS[a] = Math.cos(a / NA * Math.PI * 2); SIN[a] = Math.sin(a / NA * Math.PI * 2); }
+            const count = Math.min(40000, Math.round(n * (0.04 + 0.3 * p.agents / 100))), rng = mulberry32((C.seed ^ 0x51e) >>> 0);
+            const ax = new Float32Array(count), ay = new Float32Array(count), ah = new Int32Array(count);
+            for (let a = 0; a < count; a++) { ax[a] = rng() * gw; ay[a] = rng() * gh; ah[a] = Math.floor(rng() * NA); }
+            let Tr = new Float32Array(n), T2 = new Float32Array(n);
+            const SD = 3 + 14 * p.reach / 100, SA = 4, RA = 8;
+            const sense = (x, y, h) => {
+                const xi = (x + COS[h & (NA - 1)] * SD) | 0, yi = (y + SIN[h & (NA - 1)] * SD) | 0;
+                if (xi < 0 || yi < 0 || xi >= gw || yi >= gh) return -1;
+                const i = yi * gw + xi;
+                return Tr[i] + 1.5 * M[i];   // ink is food
+            };
+            for (let step = C.quality === 'draft' ? 60 : 180; step > 0; step--) {
+                for (let a = 0; a < count; a++) {
+                    const x = ax[a], y = ay[a];
+                    let h = ah[a];
+                    const f = sense(x, y, h), l = sense(x, y, h - SA), r = sense(x, y, h + SA);
+                    if (f < l || f < r) h += l > r ? -RA : r > l ? RA : (rng() < 0.5 ? -RA : RA);
+                    h &= NA - 1;
+                    let nx = x + COS[h], ny = y + SIN[h];
+                    if (nx < 0 || ny < 0 || nx >= gw || ny >= gh) { h = (h + NA / 2) & (NA - 1); nx = x; ny = y; }
+                    ax[a] = nx; ay[a] = ny; ah[a] = h;
+                    Tr[(ny | 0) * gw + (nx | 0)] += 1;
+                }
+                for (let y = 0; y < gh; y++) {   // spread a little (mostly staying put) and evaporate
+                    const ym = (y > 0 ? y - 1 : y) * gw, yc = y * gw, yp = (y < gh - 1 ? y + 1 : y) * gw;
+                    for (let x = 0; x < gw; x++) {
+                        const xm = x > 0 ? x - 1 : x, xp = x < gw - 1 ? x + 1 : x;
+                        T2[yc + x] = (Tr[yc + x] * 0.5 + (Tr[ym + x] + Tr[yp + x] + Tr[yc + xm] + Tr[yc + xp]) * 0.1 + (Tr[ym + xm] + Tr[ym + xp] + Tr[yp + xm] + Tr[yp + xp]) * 0.025) * 0.88;
+                    }
+                }
+                [Tr, T2] = [T2, Tr];
+            }
+            if (p.veins > 50) Tr = boxBlur(Tr, gw, gh, 1, 1);
+            let peak = 0;   // brightest vein off the letters (on them, food piles the trail up)
+            for (let i = 0; i < n; i++) if (M[i] < 0.3 && Tr[i] > peak) peak = Tr[i];
+            const norm = peak * 0.45 || 1, col = fxSpreadColour(P, gw, gh, Math.max(2, Math.round(gw / 30)), fxMeanInk(C.items));
+            const img = new ImageData(gw, gh), d = img.data, lo = 0.42 - 0.3 * p.veins / 100;
+            for (let i = 0; i < n; i++) {
+                const a = smooth(lo, lo + 0.25, Math.sqrt(Tr[i] / norm)) * 0.9;
+                if (a < 0.004) continue;
+                const q = i * 4;
+                d[q] = col.R[i]; d[q + 1] = col.G[i]; d[q + 2] = col.B[i]; d[q + 3] = a * 255;
+            }
+            const out = fxUpscale(img, C);
+            fx2d(out).drawImage(src, 0, 0);
+            return out;
+        }
+
+        // ---- 19. Frost ----
+        // Fronds start on the edge and grow outward along the normal. Ice branches at 60°, so
+        // every frond throws pairs of side branches at that angle, two generations deep.
+        function fxFrost(src, C, p) {
+            const { k, x0, y0, ref } = C, W = fxWorkRes(src, C, 0.5e6), { fw, fh, n, kq } = W;
+            const Ab = boxBlur(W.P.A, fw, fh, Math.max(1, Math.round(ref * 0.012 * kq)), 2), edges = [];
+            for (let i = 0; i < n; i++) if (Ab[i] > 0.35 && Ab[i] < 0.65) edges.push(i);
+            const rng = mulberry32((C.seed ^ 0xf205) >>> 0), L = ref * (0.06 + 0.45 * p.growth / 100), ice = p.ice / 100;
+            const mean = fxMeanInk(C.items), tint = [mean[0] + (85 - mean[0]) * ice, mean[1] + (140 - mean[1]) * ice, mean[2] + (195 - mean[2]) * ice];
+            const paths = [new Path2D(), new Path2D(), new Path2D()], seg = ref * 0.02;
+            const frond = (x, y, ang, len, depth) => {
+                const steps = Math.max(2, Math.round(len / seg)), st = len / steps, path = paths[depth];
+                path.moveTo(x, y);
+                for (let s = 1; s <= steps; s++) {
+                    ang += (rng() - 0.5) * 0.12;
+                    x += Math.cos(ang) * st;
+                    y += Math.sin(ang) * st;
+                    path.lineTo(x, y);
+                    if (depth < 2 && s < steps && rng() < 0.55) {
+                        const side = len * (1 - s / steps) * (0.35 + 0.25 * rng());
+                        frond(x, y, ang + Math.PI / 3, side, depth + 1);
+                        frond(x, y, ang - Math.PI / 3, side * (0.7 + 0.3 * rng()), depth + 1);
+                        path.moveTo(x, y);
+                    }
+                }
+            };
+            const count = Math.min(2500, Math.round(edges.length / kq * 0.02 * (0.2 + 2 * p.density / 100)));
+            for (let f = 0; f < count; f++) {
+                const i = edges[Math.floor(rng() * edges.length)], wx = i % fw, wy = (i / fw) | 0, [nx, ny] = fxNormal(Ab, fw, fh, wx, wy);
+                frond(x0 + (wx + 0.5) / kq, y0 + (wy + 0.5) / kq, Math.atan2(ny, nx) + (rng() - 0.5) * 0.6, L * (0.4 + 0.6 * rng()), 0);
+            }
+            const out = fxCanvas(C.cw, C.ch), ctx = fx2d(out), widths = [ref * 0.012, ref * 0.007, ref * 0.004];
+            ctx.drawImage(src, 0, 0);
+            ctx.setTransform(k, 0, 0, k, -x0 * k, -y0 * k);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            for (let dpt = 0; dpt < 3; dpt++) {   // a darker rim, then a pale crystalline core
+                ctx.lineWidth = widths[dpt] * 1.8;
+                ctx.strokeStyle = fxRGB(tint[0] * 0.7, tint[1] * 0.7, tint[2] * 0.75, 0.55);
+                ctx.stroke(paths[dpt]);
+            }
+            for (let dpt = 0; dpt < 3; dpt++) {
+                ctx.lineWidth = widths[dpt];
+                ctx.strokeStyle = fxRGB(tint[0] + (255 - tint[0]) * 0.35, tint[1] + (255 - tint[1]) * 0.35, tint[2] + (255 - tint[2]) * 0.35, 0.95);
+                ctx.stroke(paths[dpt]);
+            }
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            return out;
+        }
+
+        // ---- 20. Fur ----
+        // Roots on a jittered grid over the ink. Near an edge a hair points out along the normal;
+        // inside, it follows a slow noise flow (the curl), and every hair droops a little.
+        // Hairs are batched into a few shades per colour so thousands draw in one go.
+        function fxFur(src, C, p) {
+            const { k, x0, y0, ref, B } = C, W = fxWorkRes(src, C, 0.5e6), { fw, fh, kq } = W;
+            const Ab = boxBlur(W.P.A, fw, fh, Math.max(1, Math.round(ref * 0.02 * kq)), 2);
+            const col = fxSpreadColour(W.P, fw, fh, Math.max(1, Math.round(ref * 0.02 * kq)), fxMeanInk(C.items));
+            const L = ref * (0.03 + 0.3 * p.length / 100), curl = p.curl / 100, T = getWearTiles(), fs = 8 / (ref * 0.5);
+            let gap = ref * (0.006 + 0.03 * (1 - p.density / 100));
+            gap = Math.max(gap, Math.sqrt((B.x1 - B.x0) * (B.y1 - B.y0) / 60000));   // keep the count sensible
+            const rng = mulberry32((C.seed ^ 0xf00) >>> 0), batches = new Map();
+            for (let gy = B.y0; gy < B.y1; gy += gap) {
+                for (let gx = B.x0; gx < B.x1; gx += gap) {
+                    const px = gx + rng() * gap, py = gy + rng() * gap, wx = (px - x0) * kq - 0.5, wy = (py - y0) * kq - 0.5;
+                    if (fxSampleField(Ab, fw, fh, wx, wy) < 0.35) continue;
+                    const [nx, ny, gl] = fxNormal(Ab, fw, fh, wx, wy), edge = Math.min(1, gl * 6);
+                    const flow = (tileSample(T.mid, px * fs, py * fs) - 0.5) * Math.PI * 2 * (0.4 + curl);
+                    let dx = nx * edge + Math.cos(Math.PI / 2 + flow) * (1 - edge) * 0.8, dy = ny * edge + Math.sin(Math.PI / 2 + flow) * (1 - edge) * 0.8 + 0.3;
+                    const dl = Math.hypot(dx, dy) || 1;
+                    dx /= dl; dy /= dl;
+                    const len = L * (0.55 + 0.45 * rng()) * (0.6 + 0.4 * edge), bend = (rng() - 0.5 + (tileSample(T.mid, px * fs + 91, py * fs) - 0.5)) * curl * 1.6;
+                    const cx = px + (dx * Math.cos(bend) - dy * Math.sin(bend)) * len * 0.55, cy = py + (dx * Math.sin(bend) + dy * Math.cos(bend)) * len * 0.55;
+                    const ex = px + (dx * Math.cos(bend * 2) - dy * Math.sin(bend * 2)) * len, ey = py + (dx * Math.sin(bend * 2) + dy * Math.cos(bend * 2)) * len + len * 0.08;
+                    const wi = fxIdx(W, wx, wy), shade = 0.7 + Math.floor(rng() * 4) * 0.15;
+                    const key = `${Math.round(col.R[wi] * shade / 8)},${Math.round(col.G[wi] * shade / 8)},${Math.round(col.B[wi] * shade / 8)}`;
+                    let path = batches.get(key);
+                    if (!path) batches.set(key, path = new Path2D());
+                    path.moveTo(px, py);
+                    path.quadraticCurveTo(cx, cy, ex, ey);
+                }
+            }
+            const out = fxCanvas(C.cw, C.ch), ctx = fx2d(out);
+            ctx.globalAlpha = 0.85;
+            ctx.drawImage(src, 0, 0);   // the coat's base
+            ctx.globalAlpha = 0.9;
+            ctx.setTransform(k, 0, 0, k, -x0 * k, -y0 * k);
+            ctx.lineCap = 'round';
+            ctx.lineWidth = Math.max(0.7 / k, ref * 0.006);
+            for (const [key, path] of batches) {
+                const [r, g, b] = key.split(',').map(v => Math.min(255, +v * 8));
+                ctx.strokeStyle = fxRGB(r, g, b);
+                ctx.stroke(path);
+            }
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.globalAlpha = 1;
+            return out;
+        }
+
+        // ------------------------------------------------------------------
         // GRID SYSTEMS: baseline · Swiss modular (Müller-Brockmann) · proportional (Bosshard)
         // ------------------------------------------------------------------
         // Every length is stored in canvas pixels; the inspector shows px, mm or pt.
@@ -3513,6 +4875,9 @@
             document.getElementById('grid-panel-body').style.display = panelTab === 'grid' ? '' : 'none';
             document.getElementById('fx-panel-body').style.display = panelTab === 'fx' ? '' : 'none';
             document.getElementById('btn-fx-panel').classList.toggle('is-on', open && panelTab === 'fx');
+            document.getElementById('layers-panel-body').style.display = panelTab === 'layers' ? '' : 'none';
+            document.getElementById('btn-layers-panel').classList.toggle('is-on', open && panelTab === 'layers');
+            syncLayersPanel(true);
             document.querySelectorAll('.panel-tab').forEach(b => b.classList.toggle('is-on', b.dataset.panel === panelTab));
             document.getElementById('btn-grid-panel').classList.toggle('is-on', open && panelTab === 'grid');
             document.getElementById('btn-stamps-panel').classList.toggle('is-on', open && panelTab === 'stamps');
@@ -3522,6 +4887,7 @@
         document.getElementById('btn-grid-panel').addEventListener('click', () => setGridPanel(!(panelOpen() && panelTab === 'grid'), 'grid'));
         document.getElementById('btn-stamps-panel').addEventListener('click', () => setGridPanel(!(panelOpen() && panelTab === 'stamps'), 'stamps'));
         document.getElementById('btn-fx-panel').addEventListener('click', () => setGridPanel(!(panelOpen() && panelTab === 'fx'), 'fx'));
+        document.getElementById('btn-layers-panel').addEventListener('click', () => setGridPanel(!(panelOpen() && panelTab === 'layers'), 'layers'));
         document.getElementById('btn-close-grid-panel').addEventListener('click', () => setGridPanel(false));
         document.getElementById('panel-tabs').addEventListener('click', (e) => {
             const b = e.target.closest('[data-panel]');
@@ -3633,6 +4999,7 @@
                 c.drawImage(st.canvas, p.x - st.width * k / 2, p.y - st.height * k / 2, st.width * k, st.height * k);
                 c.globalAlpha = 1;
             }
+            if (drawDrag) drawShapePreview(c, vp);
             if (state.activeTool === 'type' && typeCaret) {
                 // caret: cap height tall, sitting on the baseline
                 const m = groupMetrics(state.typeGroup), capH = (m.capHeight || m.anyHeight || 60) * state.stampScale;
@@ -3650,7 +5017,7 @@
             c.restore();
 
             // stamps deleted or undone since they were selected drop out of the selection
-            if (state.selection.length) state.selection = state.selection.filter(it => state.placedItems.includes(it));
+            if (state.selection.length) state.selection = state.selection.filter(it => state.placedItems.includes(it) && isPickable(it));
             if (state.activeTool === 'select' && state.selection.length) {
                 const outline = (pts) => { c.beginPath(); pts.forEach((q, i) => i ? c.lineTo(q.x, q.y) : c.moveTo(q.x, q.y)); c.closePath(); c.stroke(); };
                 c.save();
@@ -3683,6 +5050,7 @@
             }
             syncItemInspector();
             syncFxPanel();
+            syncLayersPanel();
         }
 
         // ------------------------------------------------------------------
@@ -3700,6 +5068,7 @@
             const item = {
                 stamp, x, y, width: stamp.width, height: stamp.height, scale,
                 color: state.newInk,   // null = the stamp's own ink
+                layer: state.activeLayer,
                 rotation: ((Math.random() - 0.5) * 2) * (state.angleJitter * Math.PI / 180),
                 seed: Math.floor(Math.random() * 999999)
             };
@@ -3714,7 +5083,7 @@
                     alert('No stamps available! Cut one from a specimen sheet first.');
                     return;
                 }
-                if (!onBoard(pos)) return;
+                if (!onBoard(pos) || !activeLayerReady()) return;
                 const at = snapPlacement(st, pos.x, pos.y, e && e.altKey, state.stampScale);
                 pushUndo();
                 placeStamp(st, at.x, at.y, state.stampScale);
@@ -3728,7 +5097,7 @@
                     const k = cornerHit(e);
                     if (k >= 0) { beginScaleDrag(k, pos); return; }
                 }
-                let hit = [...state.placedItems].reverse().find(it => hitItem(it, pos, 4 / designVP.scale)), group = null;
+                let hit = itemsInOrder().filter(isPickable).reverse().find(it => hitItem(it, pos, 4 / designVP.scale)), group = null;
                 if (!hit) {
                     // distorted or melted ink can sit well away from its stamps: clicking it takes its group
                     group = fxInkHit(pos);
@@ -3752,8 +5121,185 @@
                 if (!onBoard(pos)) return;
                 setTypeCaret(pos, e && e.altKey);
                 drawDesignOverlay();
+            } else if (state.activeTool === 'shape' || state.activeTool === 'gradient') {
+                if (!onBoard(pos) || !activeLayerReady()) return;
+                drawDrag = { a: pos, b: pos, shift: e.shiftKey };
+                drawDesignOverlay();
             }
         }
+
+        // ---- Shape & Gradient tools ----
+        // Drag out a shape and it becomes a stamp of its own (worn like the rest), so it can be
+        // selected, recoloured, layered and run through any effect. The Gradient tool draws the
+        // same shapes filled with a gradient; gradients keep their colours, skip the wear, and
+        // make good food for Halftone, Watercolour and the other effects.
+        const SHAPES = [['rect', 'Rectangle'], ['round', 'Rounded'], ['ellipse', 'Ellipse'], ['triangle', 'Triangle'], ['star', 'Star'], ['line', 'Line']];
+        const draw = { shape: 'rect', fill: 'solid', stroke: 14, color: '#1a1a1a', gradA: '#1a1a1a', gradB: '#f59e0b', gradClear: false, gradType: 'linear-h' };
+        let drawDrag = null;   // { a, b, shift } in page px
+        const hexToRgba = (hex, a) => { const { r, g, b } = hexToRgb(hex); return `rgba(${r}, ${g}, ${b}, ${a})`; };
+
+        // The box (or line) a drag describes; Shift makes squares, circles and 45° lines
+        function drawGeom(d) {
+            const a = d.a;
+            let b = d.b;
+            if (draw.shape === 'line') {
+                if (d.shift) {
+                    const ang = Math.round(Math.atan2(b.y - a.y, b.x - a.x) / (Math.PI / 4)) * Math.PI / 4, len = Math.hypot(b.x - a.x, b.y - a.y);
+                    b = { x: a.x + Math.cos(ang) * len, y: a.y + Math.sin(ang) * len };
+                }
+                return { line: true, a, b };
+            }
+            let w = b.x - a.x, h = b.y - a.y;
+            if (d.shift) { const m = Math.max(Math.abs(w), Math.abs(h)); w = Math.sign(w || 1) * m; h = Math.sign(h || 1) * m; }
+            b = { x: a.x + w, y: a.y + h };
+            return { line: false, a, b, x0: Math.min(a.x, b.x), y0: Math.min(a.y, b.y), w: Math.abs(w), h: Math.abs(h) };
+        }
+        function shapePath(x, shape, w, h) {
+            x.beginPath();
+            if (shape === 'ellipse') x.ellipse(w / 2, h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
+            else if (shape === 'round') {
+                const r = Math.min(w, h) * 0.2;
+                x.moveTo(r, 0);
+                x.arcTo(w, 0, w, h, r); x.arcTo(w, h, 0, h, r); x.arcTo(0, h, 0, 0, r); x.arcTo(0, 0, w, 0, r);
+                x.closePath();
+            } else if (shape === 'triangle') {
+                x.moveTo(w / 2, 0); x.lineTo(w, h); x.lineTo(0, h);
+                x.closePath();
+            } else if (shape === 'star') {
+                for (let i = 0; i < 10; i++) {
+                    const ang = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 0.42 : 1, px = w / 2 + Math.cos(ang) * w / 2 * r, py = h * 0.55 + Math.sin(ang) * h * 0.55 * r;
+                    if (i) x.lineTo(px, py); else x.moveTo(px, py);
+                }
+                x.closePath();
+            } else if (shape === 'line') { x.moveTo(0, h / 2); x.lineTo(w, h / 2); }
+            else x.rect(0, 0, w, h);
+        }
+        // A shape or gradient as a stamp. spec: { shape, w, h, fill, stroke, color, gradient? }
+        function makeShapeStamp(spec) {
+            const line = spec.shape === 'line', sw = line || spec.fill === 'outline' ? spec.stroke : 0, pad = Math.ceil(sw / 2) + 3;
+            const w = Math.max(2, Math.round(spec.w)), h = line ? 0 : Math.max(2, Math.round(spec.h)), G = spec.gradient;
+            const c = document.createElement('canvas');
+            c.width = w + pad * 2;
+            c.height = h + pad * 2;
+            const x = c.getContext('2d');
+            x.translate(pad, pad);
+            shapePath(x, spec.shape, w, h);
+            let paint = spec.color;
+            if (G) {
+                const g = G.type === 'radial' ? x.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.max(1, Math.hypot(w, h) / 2))
+                    : G.type === 'linear-v' ? x.createLinearGradient(0, G.ay, 0, G.by)
+                    : G.type === 'linear-h' ? x.createLinearGradient(G.ax, 0, G.bx, 0)
+                    : x.createLinearGradient(G.ax, G.ay, G.bx, G.by);
+                g.addColorStop(0, G.a);
+                g.addColorStop(1, G.clear ? hexToRgba(G.a, 0) : G.b);
+                paint = g;
+            }
+            if (sw) {
+                x.lineWidth = sw; x.lineJoin = 'round'; x.lineCap = 'round';
+                x.strokeStyle = paint;
+                x.stroke();
+            } else {
+                x.fillStyle = paint;
+                x.fill();
+            }
+            const name = (SHAPES.find(q => q[0] === spec.shape) || SHAPES[0])[1];
+            return { id: newId(G ? 'gradient' : 'shape'), kind: G ? 'gradient' : 'shape', spec, canvas: c, width: c.width, height: c.height, name: G ? `${name} gradient` : name, label: '', group: null, sheet: 'Shapes', baseline: null };
+        }
+        function finishDraw() {
+            const d = drawDrag, gradient = state.activeTool === 'gradient';
+            drawDrag = null;
+            const g = drawGeom(d), grad = (ax, ay, bx, by, type) => gradient ? { type, a: draw.gradA, b: draw.gradB, clear: draw.gradClear, ax, ay, bx, by } : undefined;
+            let spec, cx, cy, rot = 0;
+            if (g.line) {
+                if (Math.hypot(g.b.x - g.a.x, g.b.y - g.a.y) < 4) g.b = { x: g.a.x + 400, y: g.a.y };   // a click: a default line
+                const len = Math.hypot(g.b.x - g.a.x, g.b.y - g.a.y);
+                spec = { shape: 'line', w: len, h: 0, stroke: draw.stroke, color: draw.color, gradient: grad(0, 0, len, 0, 'linear-h') };
+                cx = (g.a.x + g.b.x) / 2;
+                cy = (g.a.y + g.b.y) / 2;
+                rot = Math.atan2(g.b.y - g.a.y, g.b.x - g.a.x);
+            } else {
+                if (g.w < 4 && g.h < 4) Object.assign(g, { x0: g.a.x - 150, y0: g.a.y - 150, w: 300, h: 300, a: { x: g.a.x - 150, y: g.a.y - 150 }, b: { x: g.a.x + 150, y: g.a.y + 150 } });
+                spec = { shape: draw.shape, w: g.w, h: g.h, fill: draw.fill, stroke: draw.stroke, color: draw.color, gradient: grad(g.a.x - g.x0, g.a.y - g.y0, g.b.x - g.x0, g.b.y - g.y0, draw.gradType) };
+                cx = g.x0 + g.w / 2;
+                cy = g.y0 + g.h / 2;
+            }
+            pushUndo();
+            const it = placeStamp(makeShapeStamp(spec), cx, cy, 1);
+            it.rotation = rot;
+            it.color = null;
+            renderDesignCanvas();
+        }
+        // The shape being dragged, dashed, with the gradient's direction
+        function drawShapePreview(c, vp) {
+            const g = drawGeom(drawDrag), s = vp.scale;
+            c.save();
+            c.strokeStyle = '#f59e0b';
+            c.lineWidth = 1.5;
+            c.setLineDash([5, 4]);
+            const o = vp.toScreen(g.line ? g.a.x : g.x0, g.line ? g.a.y : g.y0);
+            c.translate(o.x, o.y);
+            if (g.line) {
+                c.rotate(Math.atan2(g.b.y - g.a.y, g.b.x - g.a.x));
+                c.beginPath();
+                c.moveTo(0, 0);
+                c.lineTo(Math.hypot(g.b.x - g.a.x, g.b.y - g.a.y) * s, 0);
+            } else {
+                shapePath(c, draw.shape, g.w * s, g.h * s);
+            }
+            c.stroke();
+            c.restore();
+            if (state.activeTool === 'gradient' && !g.line && draw.gradType !== 'radial') {
+                const a = vp.toScreen(g.a.x, g.a.y), b = vp.toScreen(g.b.x, g.b.y), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+                const [p, q] = draw.gradType === 'linear-h' ? [{ x: a.x, y: my }, { x: b.x, y: my }] : draw.gradType === 'linear-v' ? [{ x: mx, y: a.y }, { x: mx, y: b.y }] : [a, b];
+                c.save();
+                c.strokeStyle = '#fafafa';
+                c.fillStyle = draw.gradA;
+                c.lineWidth = 1.5;
+                c.beginPath();
+                c.moveTo(p.x, p.y);
+                c.lineTo(q.x, q.y);
+                c.stroke();
+                for (const [pt, col] of [[p, draw.gradA], [q, draw.gradClear ? 'transparent' : draw.gradB]]) {
+                    c.fillStyle = col;
+                    c.beginPath();
+                    c.arc(pt.x, pt.y, 5, 0, Math.PI * 2);
+                    c.fill();
+                    c.stroke();
+                }
+                c.restore();
+            }
+        }
+
+        // The tool options bar for Shape and Gradient
+        const drawOptions = document.getElementById('draw-options');
+        (() => {
+            const seg = document.getElementById('draw-shapes');
+            for (const [id, label] of SHAPES) {
+                const b = document.createElement('button');
+                b.textContent = label;
+                b.dataset.shape = id;
+                b.addEventListener('click', () => { draw.shape = id; syncDrawOptions(); });
+                seg.append(b);
+            }
+            const bind = (id, key, read = (e) => e.target.value) => document.getElementById(id).addEventListener('input', (e) => { draw[key] = read(e); syncDrawOptions(); });
+            bind('draw-fill', 'fill');
+            bind('draw-color', 'color');
+            bind('draw-stroke', 'stroke', (e) => Math.max(1, Math.min(400, +e.target.value || 1)));
+            bind('grad-a', 'gradA');
+            bind('grad-b', 'gradB');
+            bind('grad-clear', 'gradClear', (e) => e.target.checked);
+            bind('grad-type', 'gradType');
+        })();
+        function syncDrawOptions() {
+            const tool = state.activeTool, on = tool === 'shape' || tool === 'gradient';
+            drawOptions.style.display = on ? 'flex' : 'none';
+            if (!on) return;
+            drawOptions.querySelectorAll('[data-shape]').forEach(b => b.classList.toggle('is-on', b.dataset.shape === draw.shape));
+            drawOptions.querySelectorAll('[data-draw]').forEach(el => { el.style.display = el.dataset.draw === tool ? '' : 'none'; });
+            document.getElementById('draw-stroke-wrap').style.display = draw.shape === 'line' || (tool === 'shape' && draw.fill === 'outline') ? '' : 'none';
+            document.getElementById('grad-b').disabled = draw.gradClear;
+        }
+
 
         // ---- Selection: one or more placed stamps, moved, scaled and recoloured together ----
         const isSelected = (it) => state.selection.includes(it);
@@ -3850,7 +5396,7 @@
             marquee.b = pos;
             const x0 = Math.min(marquee.a.x, pos.x), x1 = Math.max(marquee.a.x, pos.x);
             const y0 = Math.min(marquee.a.y, pos.y), y1 = Math.max(marquee.a.y, pos.y);
-            const hits = state.placedItems.filter(it => {
+            const hits = state.placedItems.filter(isPickable).filter(it => {
                 const b = selectionBounds([it]);
                 return b.x1 >= x0 && b.x0 <= x1 && b.y1 >= y0 && b.y0 <= y1;
             });
@@ -3901,6 +5447,7 @@
                 return true;
             }
             if (!groupById(state.typeGroup)) { toast('Choose a typeable group in the Stamps panel first.'); return false; }
+            if (!activeLayerReady()) return false;
             const st = pickGlyph(state.typeGroup, ch);
             if (!st) { toast(`No stamp labelled “${ch}” in “${groupById(state.typeGroup).name}” yet.`); return false; }
             const s = state.stampScale, ink = stampInkBox(st), cx = st.width / 2, cy = st.height / 2;
@@ -3960,6 +5507,7 @@
             if (document.activeElement !== sIn) sIn.value = Math.round(itemScale(ref) * 100);
             if (document.activeElement !== rIn) rIn.value = +(ref.rotation * 180 / Math.PI).toFixed(1);
             if (document.activeElement !== cIn) cIn.value = ref.color || stampInkHex(ref.stamp);
+            cIn.closest('label').style.display = sel.every(it => it.stamp.kind === 'gradient') ? 'none' : '';
             const bIn = document.getElementById('item-blend'), blends = new Set(sel.map(it => it.blend || 'auto'));
             if (document.activeElement !== bIn) bIn.value = blends.size === 1 ? [...blends][0] : '';
         }
@@ -4046,7 +5594,9 @@
                 items: state.placedItems.map(it => ({ ...it })),
                 sel: state.selection.map(it => state.placedItems.indexOf(it)).filter(i => i >= 0),
                 caret: typeCaret ? { ...typeCaret } : null,
-                fx: fxClone(state.fx)
+                fx: fxClone(state.fx),
+                layers: fxClone(state.layers),
+                activeLayer: state.activeLayer
             };
         }
 
@@ -4067,6 +5617,7 @@
         function restoreItems(snap) {
             state.placedItems = snap.items.map(o => ({ ...o }));
             if (snap.fx) state.fx = fxClone(snap.fx);
+            if (snap.layers) { state.layers = fxClone(snap.layers); state.activeLayer = snap.activeLayer; }
             state.selection = snap.sel.map(i => state.placedItems[i]).filter(Boolean);
             typeCaret = state.activeTool === 'type' && snap.caret ? { ...snap.caret } : null;
             typeRun = [];
@@ -4132,7 +5683,8 @@
                     }
                     fxSet = groups.get(o.fxSet);
                 }
-                return { ...o, fxSet, x: o.x + offset, y: o.y + offset };
+                const layer = state.layers.some(L => L.id === o.layer) ? o.layer : state.activeLayer;
+                return { ...o, fxSet, layer, x: o.x + offset, y: o.y + offset };
             });
             state.placedItems.push(...copies);
             if (state.activeTool !== 'select') document.querySelector('.tool-btn[data-tool="select"]').click();
@@ -4191,6 +5743,10 @@
                 moveScaleDrag(pos, e);
             } else if (lensDrag) {
                 moveLensDrag(pos);
+            } else if (drawDrag) {
+                drawDrag.b = pos;
+                drawDrag.shift = e.shiftKey;
+                drawDesignOverlay();
             } else if (moveDrag) {
                 moveMoveDrag(pos, e);
             } else if (marquee) {
@@ -4203,6 +5759,7 @@
             // a click (no drag) on one stamp of a group narrows the selection to it
             if (moveDrag && !moveDrag.moved && !moveDrag.whole && state.selection.length > 1) state.selection = [moveDrag.lead];
             state.isInteracting = false;
+            if (drawDrag) finishDraw();
             scaleDrag = null;
             moveDrag = null;
             lensDrag = null;
@@ -4224,7 +5781,7 @@
         // ------------------------------------------------------------------
         // KEYBOARD: zoom & pan for both viewports, lasso editing, stamp nudging
         // ------------------------------------------------------------------
-        const TOOL_KEYS = { s: 'stamp', v: 'select', t: 'type', h: 'pan' };
+        const TOOL_KEYS = { s: 'stamp', v: 'select', t: 'type', u: 'shape', j: 'gradient', h: 'pan' };
         window.addEventListener('keydown', (e) => {
             if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
                 e.preventDefault();
@@ -4257,7 +5814,7 @@
                 // select every stamp on the page
                 e.preventDefault();
                 if (state.activeTool !== 'select') document.querySelector('.tool-btn[data-tool="select"]').click();
-                state.selection = [...state.placedItems];
+                state.selection = state.placedItems.filter(isPickable);
                 drawDesignOverlay();
                 return;
             }
@@ -4323,6 +5880,7 @@
             const key = e.key.toLowerCase();
             if (key === 'g') { grid.show = !grid.show; onGridChange(); return; }
             if (key === 'e' && !e.altKey) { setGridPanel(!(panelOpen() && panelTab === 'fx'), 'fx'); return; }
+            if (key === 'l' && !e.altKey) { setGridPanel(!(panelOpen() && panelTab === 'layers'), 'layers'); return; }
             if (TOOL_KEYS[key] && !e.altKey) {
                 document.querySelector(`.tool-btn[data-tool="${TOOL_KEYS[key]}"]`).click();
                 return;
@@ -4399,7 +5957,8 @@
                 btn.classList.add('btn-active');
                 state.activeTool = btn.getAttribute('data-tool');
 
-                designViewportEl.style.cursor = { stamp: 'crosshair', select: 'default', type: 'text', pan: 'grab' }[state.activeTool];
+                designViewportEl.style.cursor = { stamp: 'crosshair', select: 'default', type: 'text', shape: 'crosshair', gradient: 'crosshair', pan: 'grab' }[state.activeTool];
+                syncDrawOptions();
                 designHover = null;
                 snapGuides = null;
                 if (state.activeTool !== 'type') typeCaret = null;
@@ -4408,6 +5967,8 @@
                     stamp: "Stamp: click to place. The preview snaps to the grid; hold Alt to place freely.",
                     select: "Select: click or drag a box (Shift adds, ⌘A all). Drag to move, corners to scale. ⌘C / ⌘X / ⌘V / ⌘D copy, cut, paste, duplicate; ⌘Z undo.",
                     type: "Type: click on a baseline to set the caret, then type with the group chosen in the Stamps panel.",
+                    shape: "Shape: drag to draw (Shift for squares, circles and 45° lines). Shapes are stamps: select, recolour, layer and add effects.",
+                    gradient: "Gradient: drag to draw a gradient-filled shape. It takes effects like any stamp; try Halftone or Watercolour.",
                     pan: "Pan: drag to move around. Space-drag works with any tool."
                 };
                 document.getElementById('toast-txt').textContent = toastMap[state.activeTool];
@@ -4415,6 +5976,10 @@
             });
         });
 
+        mylarSelect.addEventListener('change', (e) => {
+            state.mylarKind = e.target.value;
+            renderDesignCanvas();
+        });
         document.getElementById('select-paper').addEventListener('change', (e) => {
             state.paperPreset = e.target.value;
             renderDesignCanvas();
@@ -4497,11 +6062,19 @@
             // as on the canvas: stacking order kept, each stamp blending with what's beneath it;
             // effect layers and relief are raster images in the same places
             svg += `  <g id="stamps">\n`;
-            const sets = fxCollect(), layered = new Set();
+            const drawn = itemsInOrder().filter(isShown), sets = fxCollect(drawn, true), layered = new Set();
+            let openLayer = null;
             const rasterSVG = (c, x, y, w2, h2, mode) =>
                 `  <image x="${x}" y="${y}" width="${w2}" height="${h2}" preserveAspectRatio="none" href="${c.toDataURL()}"${mode === 'source-over' ? '' : ` style="mix-blend-mode:${cssBlend(mode)}"`}/>\n`;
-            state.placedItems.forEach(item => {
-                const S = sets.get(fxSetId(item));
+            drawn.forEach(item => {
+                const Ly = layerOf(item);
+                if (Ly !== openLayer) {
+                    if (openLayer) svg += `  </g>\n`;
+                    openLayer = Ly;
+                    const plain = Ly.opacity >= 100 && Ly.blend === 'source-over';
+                    svg += `  <g id="layer-${Ly.id}" data-name="${Ly.name.replace(/[<&"]/g, '')}"${plain ? '' : ` opacity="${Ly.opacity / 100}" style="mix-blend-mode:${cssBlend(Ly.blend)}"`}>\n`;
+                }
+                const S = sets.get(fxDrawKey(item));
                 if (fxNeedsLayer(S.rec)) {
                     if (layered.has(S)) return;
                     layered.add(S);
@@ -4515,6 +6088,7 @@
                 svg += `    <image x="${-deg.width / 2}" y="${-deg.height / 2}" width="${deg.width}" height="${deg.height}" href="${dataUrl}"/>\n`;
                 svg += `  </g>\n`;
             });
+            if (openLayer) svg += `  </g>\n`;
             for (const S of sets.values()) {
                 const R = S.rec.press.depth ? fxRender(S, 'final').relief : null;
                 if (R) svg += rasterSVG(R.shadow, R.x, R.y, R.w, R.h, 'multiply') + rasterSVG(R.light, R.x, R.y, R.w, R.h, 'source-over');
@@ -4817,7 +6391,7 @@
             const png = await stampBlob(s);
             return {
                 id: s.id, name: s.name, label: s.label || '', group: s.group, groupName: (groupById(s.group) || {}).name || 'Unsorted',
-                sheet: s.sheet || '', baseline: s.baseline, width: s.width, height: s.height,
+                sheet: s.sheet || '', baseline: s.baseline, width: s.width, height: s.height, kind: s.kind || null, spec: s.spec || null,
                 png: asDataURL ? await blobToDataURL(png) : png
             };
         }
@@ -4832,7 +6406,8 @@
             return {
                 id: r.id || newId('stamp'), canvas, width: canvas.width, height: canvas.height,
                 name: r.name || 'Stamp', label: r.label || '', group: groupId, sheet: r.sheet || '',
-                baseline: r.baseline ?? null, blob: typeof r.png === 'string' ? null : r.png
+                baseline: r.baseline ?? null, blob: typeof r.png === 'string' ? null : r.png,
+                ...(r.kind ? { kind: r.kind, spec: r.spec } : {})
             };
         }
 
@@ -4893,7 +6468,13 @@
             ['Munari xerox', { warp: { type: 'xerox', amount: 60, freq: 45, angle: 0 } }, 'The original dragged across the copier glass'],
             ['Letterpress', { press: { strength: 85, depth: 55 } }, 'Heavy pressure, letters bitten into the sheet'],
             ['Blind emboss', { press: { depth: -70 } }, 'Letters raised off the sheet'],
-            ['Kiss', { press: { strength: 15, depth: 12 } }, 'A light rub: starved, broken ink']
+            ['Kiss', { press: { strength: 15, depth: 12 } }, 'A light rub: starved, broken ink'],
+            ['Neon sign', { more: { neon: { on: true, glow: 70 } } }, 'Glowing glass tubes along the strokes; best on Dark Charcoal'],
+            ['Riso halftone', { more: { halftone: { on: true, size: 25 }, riso: { on: true } } }, 'A dot screen through three drums out of register'],
+            ['Xerox ×8', { more: { copy: { on: true, copies: 64, dark: 60 } } }, 'Eight generations of photocopying'],
+            ['Long shadow', { more: { block: { on: true, depth: 85, fade: 100, shade: 70, angle: 45 } } }, 'A long shadow fading away'],
+            ['Inline', { more: { contours: { on: true, lines: 10, side: -100, spacing: 25 } } }, 'Two lines cut into each stroke'],
+            ['Cut paper', { more: { contours: { on: true, lines: 0, side: -100, layers: 70, spacing: 35 } } }, 'Stacked paper silhouettes with shadows']
         ];
         const FX_UI = [
             { title: 'Impression', note: 'How hard each letter was rubbed down, and how far the sheet took the pressure.', rows: [
@@ -4922,7 +6503,10 @@
             ] }
         ];
         function fxMerge(rec, patch) {
-            for (const k of Object.keys(patch)) Object.assign(rec[k], patch[k]);
+            for (const k of Object.keys(patch)) {
+                if (k === 'more') for (const id of Object.keys(patch.more)) Object.assign(rec.more[id], patch.more[id]);
+                else Object.assign(rec[k], patch[k]);
+            }
         }
 
         // Who the panel edits: { kind: 'page' | 'set' | 'new', id, rec, items, sel }
@@ -4963,6 +6547,33 @@
         function buildFxPanel() {
             fxPanel.innerHTML = '';
             const syncs = [];
+            // A slider for rec[row.key]; labelFor(rec) gives its label, or null to hide it.
+            // A drag is one undo step; double-click resets it.
+            const addSlider = (parent, row, labelFor = () => row.label) => {
+                const wrap = el('div', 'fx-slider'), top = el('div', 'fx-head'), lab = el('span', '', row.label || ''), val = el('span');
+                const inp = el('input');
+                inp.type = 'range';
+                inp.min = row.min ?? 0;
+                inp.max = row.max ?? 100;
+                inp.step = row.step || 1;
+                inp.className = 'w-full';
+                inp.title = `${row.tip ? row.tip + ' ' : ''}Double-click to reset.`;
+                inp.addEventListener('input', () => fxEdit(rec => fxPut(rec, row.key, +inp.value), true));
+                inp.addEventListener('change', fxEditEnd);
+                inp.addEventListener('dblclick', () => fxClick(rec => fxPut(rec, row.key, fxGet(fxDefaults(), row.key))));
+                top.append(lab, val);
+                wrap.append(top, inp);
+                parent.append(wrap);
+                syncs.push(rec => {
+                    const label = labelFor(rec);
+                    wrap.style.display = label ? '' : 'none';
+                    if (!label) return;
+                    const v = fxGet(rec, row.key);
+                    lab.textContent = label;
+                    inp.value = v;
+                    val.textContent = row.fmt ? row.fmt(Math.round(v)) : v;
+                });
+            };
             const head = el('div', 'g-section');
             const target = el('div', 'g-info'), acts = el('div', 'flex flex-wrap gap-1 mt-2'), groups = el('div', 'flex flex-wrap gap-1 mt-2');
             head.append(el('div', 'g-title', 'Applies to'), target, acts, groups);
@@ -5001,29 +6612,9 @@
                     box.append(grid);
                 }
                 for (const row of sec.rows) {
-                    const wrap = el('div', 'fx-slider'), top = el('div', 'fx-head'), lab = el('span', '', row.label || ''), val = el('span');
-                    const inp = el('input');
-                    inp.type = 'range';
-                    inp.min = row.min ?? 0;
-                    inp.max = row.max ?? 100;
-                    inp.step = row.step || 1;
-                    inp.className = 'w-full';
-                    inp.title = `${row.tip ? row.tip + ' ' : ''}Double-click to reset.`;
-                    inp.addEventListener('input', () => fxEdit(rec => fxPut(rec, row.key, +inp.value), true));
-                    inp.addEventListener('change', fxEditEnd);
-                    inp.addEventListener('dblclick', () => fxClick(rec => fxPut(rec, row.key, fxGet(fxDefaults(), row.key))));
-                    top.append(lab, val);
-                    wrap.append(top, inp);
-                    box.append(wrap);
-                    syncs.push(rec => {
+                    addSlider(box, row, (rec) => {
                         const label = sec.warp ? FX_WARP[rec.warp.type][row.param] : row.label;
-                        const show = !!label && (!sec.toggle || fxGet(rec, sec.toggle)) && (!row.show || row.show(rec));
-                        wrap.style.display = show ? '' : 'none';
-                        if (!show) return;
-                        const v = fxGet(rec, row.key);
-                        lab.textContent = label;
-                        inp.value = v;
-                        val.textContent = row.fmt ? row.fmt(Math.round(v)) : v;
+                        return label && (!sec.toggle || fxGet(rec, sec.toggle)) && (!row.show || row.show(rec)) ? label : null;
                     });
                 }
                 if (sec.warp) {
@@ -5036,6 +6627,46 @@
                 }
                 fxPanel.append(box);
             }
+
+            // twenty more, folded by family until wanted
+            const more = el('div', 'g-section');
+            more.append(el('div', 'g-title', 'More effects'), el('p', 'fx-note', 'Processes from print, craft, light and growth; stack as many as you like. Shape effects run before the distortion, print effects after it.'));
+            for (const cat of [...new Set(FX_MORE.map(E => E.cat))]) {
+                const fold = el('details', 'fx-fold'), sum = el('summary', '', cat);
+                fold.append(sum);
+                syncs.push(rec => {
+                    const on = FX_MORE.filter(E => E.cat === cat && rec.more[E.id].on).length;
+                    sum.textContent = on ? `${cat} · ${on} on` : cat;
+                    if (on) fold.open = true;
+                });
+                for (const E of FX_MORE.filter(E => E.cat === cat)) {
+                    const row = el('div', 'fx-more'), head = el('label', 'fx-toggle fx-more-head'), cb = el('input'), body = el('div');
+                    cb.type = 'checkbox';
+                    cb.addEventListener('change', () => fxClick(rec => { rec.more[E.id].on = cb.checked; }));
+                    head.title = E.tip;
+                    head.append(cb, document.createTextNode(E.label));
+                    body.append(el('p', 'fx-note', E.tip));
+                    for (const q of E.params) {
+                        const key = `more.${E.id}.${q.key}`;
+                        if (!q.options) { addSlider(body, { ...q, key }); continue; }
+                        const wrap = el('div', 'fx-slider'), top = el('div', 'fx-head'), seg = el('div', 'fx-seg');
+                        top.append(el('span', '', q.label));
+                        for (const [v, l] of q.options) {
+                            const b = el('button', '', l);
+                            b.addEventListener('click', () => fxClick(rec => fxPut(rec, key, v)));
+                            seg.append(b);
+                            syncs.push(rec => b.classList.toggle('is-on', fxGet(rec, key) === v));
+                        }
+                        wrap.append(top, seg);
+                        body.append(wrap);
+                    }
+                    syncs.push(rec => { cb.checked = rec.more[E.id].on; body.style.display = rec.more[E.id].on ? '' : 'none'; });
+                    row.append(head, body);
+                    fold.append(row);
+                }
+                more.append(fold);
+            }
+            fxPanel.append(more);
 
             const foot = el('div', 'g-section'), reset = el('button', 'lib-btn', 'Reset effects');
             reset.title = 'Back to plain stamps for whatever this panel applies to';
@@ -5100,7 +6731,7 @@
         // The effect layer with ink under page point pos, topmost first: its group's stamps (for
         // the page's own effects, just the nearest stamp), or null
         function fxInkHit(pos) {
-            const page = currentPage(), sets = [...fxCollect().values()].filter(S => fxNeedsLayer(S.rec)).reverse();
+            const page = currentPage(), sets = [...fxCollect(itemsInOrder().filter(isShown), true).values()].filter(S => fxNeedsLayer(S.rec)).reverse();
             for (const S of sets) {
                 const slot = fxCache.get(`${page ? page.id : ''}|${S.id}`);
                 const q = slot && ['final', 'draft'].find(k => slot[k] && slot[k].key === fxSetKey(S, k));
@@ -5108,11 +6739,124 @@
                 if (!L || pos.x < L.x || pos.y < L.y || pos.x >= L.x + L.w || pos.y >= L.y + L.h) continue;
                 const px = Math.floor((pos.x - L.x) * L.canvas.width / L.w), py = Math.floor((pos.y - L.y) * L.canvas.height / L.h);
                 if (L.canvas.getContext('2d').getImageData(px, py, 1, 1).data[3] < 60) continue;
-                if (S.id !== 'page') return S.items;
+                const pickable = S.items.filter(isPickable);
+                if (!pickable.length) continue;
+                if (!S.id.startsWith('page@')) return pickable;
                 const d = (it) => Math.hypot(it.x - pos.x, it.y - pos.y);
-                return [S.items.reduce((a, b) => d(b) < d(a) ? b : a)];
+                return [pickable.reduce((a, b) => d(b) < d(a) ? b : a)];
             }
             return null;
+        }
+
+        // ---- Layers panel ----
+        const layersPanel = document.getElementById('layers-panel-body');
+        let layersSig = '', layerGesture = false;
+        // A change to a layer: one undo step (a slider drag counts as one)
+        function editLayer(L, patch, sliding = false) {
+            if (!layerGesture) { pushUndo(); layerGesture = sliding; }
+            Object.assign(L, patch);
+            renderDesignCanvas();
+            syncLayersPanel(true);
+        }
+        function addLayer() {
+            pushUndo();
+            const L = newLayer(`Layer ${state.layers.length + 1}`);
+            state.layers.splice(state.layers.indexOf(activeLayerObj()) + 1, 0, L);
+            state.activeLayer = L.id;
+            renderDesignCanvas();
+        }
+        function deleteLayer(L) {
+            if (state.layers.length < 2) { alert('A page needs at least one layer.'); return; }
+            const n = state.placedItems.filter(it => it.layer === L.id).length;
+            if (n && !confirm(`Delete “${L.name}” and its ${n} stamp${n > 1 ? 's' : ''}?`)) return;
+            pushUndo();
+            const i = state.layers.indexOf(L);
+            state.placedItems = state.placedItems.filter(it => it.layer !== L.id);
+            state.layers.splice(i, 1);
+            if (state.activeLayer === L.id) state.activeLayer = state.layers[Math.max(0, i - 1)].id;
+            renderDesignCanvas();
+        }
+        function moveLayer(L, dir) {
+            const i = state.layers.indexOf(L), j = i + dir;
+            if (j < 0 || j >= state.layers.length) return;
+            pushUndo();
+            [state.layers[i], state.layers[j]] = [state.layers[j], state.layers[i]];
+            renderDesignCanvas();
+        }
+        function syncLayersPanel(force = false) {
+            if (!panelOpen() || panelTab !== 'layers') return;
+            const counts = new Map();
+            for (const it of state.placedItems) counts.set(it.layer, (counts.get(it.layer) || 0) + 1);
+            const sel = state.selection.filter(it => state.placedItems.includes(it)), sig = JSON.stringify([state.layers, state.activeLayer, [...counts], sel.length]);
+            if (!force && sig === layersSig) return;
+            layersSig = sig;
+            layersPanel.innerHTML = '';
+            const A = activeLayerObj(), top = el('div', 'g-section'), head = el('div', 'g-title flex items-center justify-between');
+            const add = el('button', 'lib-btn', '+ Layer');
+            add.title = 'Add a layer above the active one';
+            add.addEventListener('click', addLayer);
+            head.append(el('span', '', 'Layers'), add);
+            const list = el('div', 'flex flex-col gap-1');
+            for (const L of [...state.layers].reverse()) {
+                const row = el('div', `layer-row${L.id === A.id ? ' is-active' : ''}`);
+                const eye = el('button', 'layer-btn'), lock = el('button', 'layer-btn');
+                eye.innerHTML = `<i data-lucide="${L.visible ? 'eye' : 'eye-off'}" class="w-3.5 h-3.5"></i>`;
+                lock.innerHTML = `<i data-lucide="${L.locked ? 'lock' : 'lock-open'}" class="w-3.5 h-3.5"></i>`;
+                eye.title = L.visible ? 'Hide layer' : 'Show layer';
+                lock.title = L.locked ? 'Unlock layer' : 'Lock layer (it still shows, but can’t be picked)';
+                eye.addEventListener('click', (e) => { e.stopPropagation(); editLayer(L, { visible: !L.visible }); });
+                lock.addEventListener('click', (e) => { e.stopPropagation(); editLayer(L, { locked: !L.locked }); });
+                const name = el('span', 'layer-name', L.name);
+                name.title = 'Double-click to rename';
+                name.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    const v = prompt('Rename layer', L.name);
+                    if (v && v.trim()) editLayer(L, { name: v.trim() });
+                });
+                row.append(eye, lock, name, el('span', 'layer-count', String(counts.get(L.id) || 0)));
+                if (!L.visible) row.classList.add('is-hidden');
+                row.addEventListener('click', () => { state.activeLayer = L.id; markProjectDirty(); syncLayersPanel(true); });
+                list.append(row);
+            }
+            top.append(head, list, el('p', 'fx-note mt-2', 'New stamps, typing, shapes and gradients go on the active layer. Hidden layers don’t show or export; locked ones can’t be picked.'));
+
+            const box = el('div', 'g-section');
+            box.append(el('div', 'g-title', A.name));
+            const op = el('div', 'fx-slider'), opHead = el('div', 'fx-head'), opVal = el('span', '', `${A.opacity}%`), opIn = el('input');
+            opIn.type = 'range';
+            opIn.min = 0;
+            opIn.max = 100;
+            opIn.value = A.opacity;
+            opIn.className = 'w-full';
+            opIn.addEventListener('input', () => editLayer(A, { opacity: +opIn.value }, true));
+            opIn.addEventListener('change', () => { layerGesture = false; });
+            opHead.append(el('span', '', 'Opacity'), opVal);
+            op.append(opHead, opIn);
+            const blendRow = el('div', 'g-row'), blend = el('select', 'grid-input');
+            for (const [v, label] of BLEND_MODES.filter(b => b[0] !== 'auto')) blend.append(new Option(label, v));
+            blend.value = A.blend;
+            blend.addEventListener('change', () => editLayer(A, { blend: blend.value }));
+            blendRow.append(el('span', '', 'Blend'), blend);
+            const acts = el('div', 'flex flex-wrap gap-1 mt-2'), act = (label, tip, fn, disabled = false) => {
+                const b = el('button', 'lib-btn', label);
+                b.title = tip;
+                b.disabled = disabled;
+                if (disabled) b.style.opacity = 0.4;
+                b.addEventListener('click', fn);
+                acts.append(b);
+            };
+            const i = state.layers.indexOf(A);
+            act('Up', 'Move this layer up', () => moveLayer(A, 1), i === state.layers.length - 1);
+            act('Down', 'Move this layer down', () => moveLayer(A, -1), i === 0);
+            act(`Move selected here${sel.length ? ` (${sel.length})` : ''}`, 'Put the selected stamps on this layer', () => {
+                pushUndo();
+                sel.forEach(it => { it.layer = A.id; });
+                renderDesignCanvas();
+            }, !sel.length || sel.every(it => it.layer === A.id));
+            act('Delete', 'Delete this layer and its stamps', () => deleteLayer(A), state.layers.length < 2);
+            box.append(op, blendRow, acts);
+            layersPanel.append(top, box);
+            if (window.lucide) lucide.createIcons();
         }
 
         // ---- Lens handles on the stage (Select tool, Effects panel open) ----
@@ -5207,12 +6951,14 @@
         ];
 
         function currentSettings() {
-            return { paperPreset: state.paperPreset, angleJitter: state.angleJitter, flaking: state.flaking, wearNoise: state.wearNoise, mylarOpacity: state.mylarOpacity };
+            return { paperPreset: state.paperPreset, mylarKind: state.mylarKind, angleJitter: state.angleJitter, flaking: state.flaking, wearNoise: state.wearNoise, mylarOpacity: state.mylarOpacity };
         }
         function applySettings(s) {
             if (!s) return;
-            state.paperPreset = s.paperPreset || 'newsprint';
+            state.paperPreset = PAPERS.some(q => q.id === s.paperPreset) ? s.paperPreset : 'newsprint';
             document.getElementById('select-paper').value = state.paperPreset;
+            state.mylarKind = MYLARS.some(k => k.id === s.mylarKind) ? s.mylarKind : 'frosted';
+            mylarSelect.value = state.mylarKind;
             for (const [key, id, fmt] of SETTING_SLIDERS) {
                 if (s[key] == null) continue;
                 state[key] = s[key];
@@ -5232,7 +6978,8 @@
         }
 
         function newPage(name, w = state.canvasWidth, h = state.canvasHeight) {
-            return { id: newId('page'), name, width: w, height: h, items: [], settings: currentSettings(), grid: snapshotGrid(), fx: fxEmpty() };
+            const L = newLayer('Layer 1');
+            return { id: newId('page'), name, width: w, height: h, items: [], settings: currentSettings(), grid: snapshotGrid(), fx: fxEmpty(), layers: [L], activeLayer: L.id };
         }
         const currentPage = () => state.project && state.project.pages.find(p => p.id === state.project.activePageId);
 
@@ -5242,6 +6989,8 @@
             page.height = state.canvasHeight;
             page.items = state.placedItems;
             page.fx = state.fx;
+            page.layers = state.layers;
+            page.activeLayer = state.activeLayer;
             page.settings = currentSettings();
             page.grid = snapshotGrid();
         }
@@ -5250,6 +6999,9 @@
             state.project.activePageId = page.id;
             state.placedItems = page.items;
             state.fx = page.fx = fxNormalizeAll(page.fx);
+            ensureLayers(page);
+            state.layers = page.layers;
+            state.activeLayer = page.activeLayer;
             state.selection = [];
             typeCaret = null;
             applySettings(page.settings);
@@ -5282,6 +7034,8 @@
                 settings: { ...src.settings },
                 grid: JSON.parse(JSON.stringify(src.grid)),
                 fx: fxClone(src.fx || fxEmpty()),
+                layers: fxClone(src.layers),
+                activeLayer: src.activeLayer,
                 items: src.items.map(it => ({ ...it }))
             };
             state.project.pages.splice(state.project.pages.indexOf(src) + 1, 0, p);
@@ -5399,10 +7153,10 @@
             capturePage();
             const P = state.project, used = new Map();
             const pages = P.pages.map(p => ({
-                id: p.id, name: p.name, width: p.width, height: p.height, settings: p.settings, grid: p.grid, fx: p.fx || fxEmpty(),
+                id: p.id, name: p.name, width: p.width, height: p.height, settings: p.settings, grid: p.grid, fx: p.fx || fxEmpty(), layers: p.layers, activeLayer: p.activeLayer,
                 items: p.items.map(it => {
                     used.set(it.stamp.id, it.stamp);
-                    return { stamp: it.stamp.id, x: it.x, y: it.y, rotation: it.rotation, scale: itemScale(it), color: it.color || null, blend: it.blend || null, fxSet: it.fxSet || null, seed: it.seed };
+                    return { stamp: it.stamp.id, x: it.x, y: it.y, rotation: it.rotation, scale: itemScale(it), color: it.color || null, blend: it.blend || null, fxSet: it.fxSet || null, layer: it.layer || null, seed: it.seed };
                 })
             }));
             // the stamps a project uses travel with it, so it still opens if they leave the library
@@ -5416,6 +7170,7 @@
             let added = 0;
             for (const r of data.stamps || []) {
                 if (byId.has(r.id)) continue;
+                if (r.kind) { const sh = await stampFromRecord(r, null); byId.set(sh.id, sh); continue; }   // a shape or gradient
                 const s = await stampFromRecord(r, groupByName(r.groupName || 'Recovered').id);
                 state.stamps.push(s);
                 byId.set(s.id, s);
@@ -5424,12 +7179,12 @@
             if (added) { refreshLibraryViews(); saveLibrary(); }
             const pages = (data.pages || []).map(p => ({
                 id: p.id || newId('page'), name: p.name || 'Page', width: p.width || 3840, height: p.height || 2160,
-                settings: p.settings, grid: p.grid, fx: fxNormalizeAll(p.fx),
+                settings: p.settings, grid: p.grid, fx: fxNormalizeAll(p.fx), layers: p.layers, activeLayer: p.activeLayer,
                 items: (p.items || []).filter(i => byId.has(i.stamp)).map(i => {
                     const st = byId.get(i.stamp);
                     return {
                         stamp: st, x: i.x, y: i.y, width: st.width, height: st.height, rotation: i.rotation || 0,
-                        scale: i.scale || 1, color: i.color || null, blend: i.blend || null, fxSet: i.fxSet || null, seed: i.seed ?? Math.floor(Math.random() * 999999)
+                        scale: i.scale || 1, color: i.color || null, blend: i.blend || null, fxSet: i.fxSet || null, layer: i.layer || null, seed: i.seed ?? Math.floor(Math.random() * 999999)
                     };
                 })
             }));
